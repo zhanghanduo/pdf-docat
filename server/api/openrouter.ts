@@ -126,24 +126,29 @@ export async function processPDF(
       'X-Title': 'DocCat PDF Extractor'
     };
     
-    // Add API key directly in the header (use raw key without Bearer prefix for OpenRouter)
+    // Try alternative authentication method
     if (API_KEY) {
       // Clean up the key to avoid any formatting issues
       const cleanKey = API_KEY.trim().replace(/\s+/g, '');
       
-      // According to OpenRouter docs, some auth backends expect the key directly without 'Bearer'
-      // Try without the Bearer prefix which appears to be causing JWT parsing issues
-      headers['Authorization'] = cleanKey;
+      // Based on OpenRouter documentation, we'll use the "HTTP Bearer" header directly
+      // This is the preferred method according to their documentation
+      headers['Authorization'] = `Bearer ${cleanKey}`;
       
-      // Log the first few characters of the key for debugging (do not log the entire key)
-      console.log(`Authorization header set directly, key starts with: ${cleanKey.substring(0, 5)}...`);
-      console.log(`Authorization header length: ${headers['Authorization'].length}`);
-      console.log(`Using direct API key without Bearer prefix to avoid JWT format issues`);
+      // Additionally, set the api-key header as a fallback mechanism
+      // Some OpenRouter clients use this approach instead
+      headers['api-key'] = cleanKey;
+      
+      console.log('Using multiple authentication methods to increase compatibility');
+      console.log(`API key starts with: ${cleanKey.substring(0, 5)}...`);
+      
+      // Log what we're doing for debugging
+      console.log('Added API key to multiple header fields to increase compatibility');
     } else {
       console.error('No API key provided for OpenRouter');
     }
     
-    console.log('Sending request with authorization header');
+    console.log('Sending request with multiple authentication methods');
     
     // Make the API request to OpenRouter
     console.log('API request details:');

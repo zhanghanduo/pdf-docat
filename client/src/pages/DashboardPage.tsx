@@ -10,6 +10,7 @@ import { ExtractedContentNew as ExtractedContent } from "@/components/ExtractedC
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/use-language";
 import { pdfApi } from "@/lib/api";
+import { FileText, Languages, FileCode } from "lucide-react";
 import { 
   ProcessingStatus, 
   EngineType, 

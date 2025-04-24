@@ -13,11 +13,11 @@ export const ProcessingOptions: React.FC<ProcessingOptionsProps> = ({
   engine,
   onChange,
 }) => {
-  // Set default engine to "auto" which we'll handle in the backend logic
+  // Set default engine to "mistral-ocr" as requested
   React.useEffect(() => {
-    // Only set if the engine isn't already set to auto
-    if (engine !== "auto") {
-      onChange("auto" as EngineType);
+    // Only set if the engine isn't already set to mistral-ocr
+    if (engine !== "mistral-ocr") {
+      onChange("mistral-ocr" as EngineType);
     }
   }, [engine, onChange]);
 

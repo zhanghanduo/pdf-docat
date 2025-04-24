@@ -312,17 +312,27 @@ Do not include any commentary or explanations outside of the JSON. The response 
     
     console.log('Sending request to OpenRouter API');
     
+    // Determine the primary and fallback models
+    // For OCR capabilities, prefer mistral-ocr and fall back to gemini-2.0-flash-lite
+    const primaryModel = (engine === 'mistral-ocr') 
+      ? 'mistralai/mistral-medium' 
+      : 'anthropic/claude-3-sonnet:poe';
+    
+    const fallbackModel = 'google/gemini-2.0-flash-lite';
+    
     // Log request details for debugging
     console.log('API request details:');
     console.log(`- Endpoint: ${BASE_API_URL}`);
-    console.log(`- Model: anthropic/claude-3-sonnet:poe`);
+    console.log(`- Primary Model: ${primaryModel}`);
+    console.log(`- Fallback Model: ${fallbackModel}`);
     console.log(`- Timeout: 180 seconds`);
     
     // Make API request
     const response = await axios.post(
       BASE_API_URL,
       {
-        model: 'anthropic/claude-3-sonnet:poe', // Claude Sonnet provides good balance of quality and cost
+        model: primaryModel,
+        fallbacks: [fallbackModel],
         messages: [
           {
             role: 'system',
@@ -582,11 +592,22 @@ async function processDocumentChunk(
     
     console.log(`Sending request for pages ${pageRange.start}-${pageRange.end}`);
     
+    // Determine the primary and fallback models
+    // For OCR capabilities, prefer mistral-ocr and fall back to gemini-2.0-flash-lite
+    const primaryModel = (engine === 'mistral-ocr') 
+      ? 'mistralai/mistral-medium' 
+      : 'anthropic/claude-3-sonnet:poe';
+    
+    const fallbackModel = 'google/gemini-2.0-flash-lite';
+    
+    console.log(`Using primary model: ${primaryModel} with fallback: ${fallbackModel}`);
+    
     // Make API request for this chunk
     const response = await axios.post(
       BASE_API_URL,
       {
-        model: 'anthropic/claude-3-sonnet:poe',
+        model: primaryModel,
+        fallbacks: [fallbackModel],
         messages: [
           {
             role: 'system',

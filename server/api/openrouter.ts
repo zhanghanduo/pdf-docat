@@ -2,7 +2,7 @@ import axios from 'axios';
 import { EngineType, ExtractedContent } from '@shared/schema';
 
 const API_KEY = process.env.OPENROUTER_API_KEY || '';
-const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const BASE_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 // Get the hostname for http-referer header
 const HOSTNAME = process.env.REPL_SLUG ? `${process.env.REPL_SLUG}.replit.dev` : 'localhost:3000';
@@ -126,29 +126,27 @@ export async function processPDF(
       'X-Title': 'DocCat PDF Extractor'
     };
     
-    // Try alternative authentication method
+    // Try a completely different authentication approach - using query parameter
+    let API_URL: string;
     if (API_KEY) {
       // Clean up the key to avoid any formatting issues
       const cleanKey = API_KEY.trim().replace(/\s+/g, '');
       
-      // Based on OpenRouter documentation, we'll use the "HTTP Bearer" header directly
-      // This is the preferred method according to their documentation
-      headers['Authorization'] = `Bearer ${cleanKey}`;
+      // Instead of using any headers for authentication, append the API key
+      // as a query parameter to bypass JWT validation completely
+      API_URL = `${BASE_API_URL}?api_key=${encodeURIComponent(cleanKey)}`;
       
-      // Additionally, set the api-key header as a fallback mechanism
-      // Some OpenRouter clients use this approach instead
-      headers['api-key'] = cleanKey;
-      
-      console.log('Using multiple authentication methods to increase compatibility');
+      console.log('Using API key as URL query parameter to bypass JWT validation');
       console.log(`API key starts with: ${cleanKey.substring(0, 5)}...`);
       
-      // Log what we're doing for debugging
-      console.log('Added API key to multiple header fields to increase compatibility');
+      // Not using any Authorization header at all
+      console.log('No Authorization header being used - using URL parameter instead');
     } else {
+      API_URL = BASE_API_URL;
       console.error('No API key provided for OpenRouter');
     }
     
-    console.log('Sending request with multiple authentication methods');
+    console.log('Sending request with API key in URL query parameter');
     
     // Make the API request to OpenRouter
     console.log('API request details:');

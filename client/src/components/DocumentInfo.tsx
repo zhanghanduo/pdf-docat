@@ -1,20 +1,28 @@
 import React from "react";
 import { ExtractedContent as ExtractedContentType } from "@shared/schema";
-import { Clock, FileText, AlertTriangle, InfoIcon } from "lucide-react";
+import { Clock, FileText, AlertTriangle, InfoIcon, Zap, Calendar } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatRelativeTime } from "@/lib/utils";
 
 interface DocumentInfoProps {
   content: ExtractedContentType;
   fileName: string;
+  processingTime?: number; // in milliseconds
 }
 
 export const DocumentInfo: React.FC<DocumentInfoProps> = ({
   content,
   fileName,
+  processingTime
 }) => {
   const hasErrors = content.content.some(
     (item) => item.content?.includes("很抱歉") || item.content?.includes("error")
   );
+  
+  // Format the extraction time
+  const extractionDate = new Date(content.metadata.extractionTime);
+  const formattedDate = extractionDate.toLocaleDateString();
+  const formattedTime = extractionDate.toLocaleTimeString();
 
   return (
     <Card className="h-full">
@@ -36,24 +44,53 @@ export const DocumentInfo: React.FC<DocumentInfoProps> = ({
             </p>
           </div>
           
+          {/* Processing Time and Stats */}
           <div>
             <h5 className="text-sm font-medium text-gray-700 flex items-center gap-1">
               <Clock size={14} />
               Processing Details
             </h5>
             <p className="text-sm text-gray-600 mt-1">
-              Extraction time: {content.metadata.extractionTime}<br />
-              Word count: {content.metadata.wordCount}<br />
+              Processed on: {formattedDate} at {formattedTime}<br />
+              Word count: {content.metadata.wordCount} words<br />
               Confidence: {(content.metadata.confidence * 100).toFixed(1)}%
+              {processingTime && (
+                <><br />Processing time: {(processingTime / 1000).toFixed(1)} seconds</>
+              )}
+            </p>
+          </div>
+          
+          {/* Engine Info */}
+          <div>
+            <h5 className="text-sm font-medium text-gray-700 flex items-center gap-1">
+              <Zap size={14} />
+              Engine Details
+            </h5>
+            <p className="text-sm text-gray-600 mt-1">
+              Model: Claude-3-Sonnet<br />
+              Provider: Anthropic via OpenRouter
             </p>
           </div>
           
           {content.metadata.isTranslated && (
             <div>
-              <h5 className="text-sm font-medium text-gray-700">Translation</h5>
+              <h5 className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m5 8 6 6" />
+                  <path d="m5 14 6-6 2-3" />
+                  <path d="M2 5h12" />
+                  <path d="M9 3v2" />
+                  <path d="m13 15 6 6" />
+                  <path d="m13 21 6-6 2-3" />
+                  <path d="M22 11H10" />
+                  <path d="M15 9v2" />
+                </svg>
+                Translation Information
+              </h5>
               <p className="text-sm text-gray-600 mt-1">
-                Source: {content.metadata.sourceLanguage || "Auto-detected"}<br />
-                Target: {content.metadata.targetLanguage}
+                Source language: {content.metadata.sourceLanguage || "Auto-detected"}<br />
+                Target language: {content.metadata.targetLanguage || "English"}<br />
+                Translation type: {content.content.some(item => item.translatedContent) ? "Full document" : "Partial"}
               </p>
             </div>
           )}

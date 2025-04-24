@@ -11,12 +11,14 @@ interface ExtractedContentProps {
   content: ExtractedContentType;
   fileName: string;
   onProcessAnother: () => void;
+  processingTime?: number; // in milliseconds
 }
 
 export const ExtractedContentNew: React.FC<ExtractedContentProps> = ({
   content,
   fileName,
   onProcessAnother,
+  processingTime = 0,
 }) => {
   const [viewMode, setViewMode] = useState<"rendered" | "markdown">("rendered");
   
@@ -65,7 +67,11 @@ export const ExtractedContentNew: React.FC<ExtractedContentProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Left sidebar with document information */}
           <div className="md:col-span-1">
-            <DocumentInfo content={content} fileName={fileName} />
+            <DocumentInfo 
+              content={content} 
+              fileName={fileName} 
+              processingTime={processingTime}
+            />
           </div>
           
           {/* Right content area */}

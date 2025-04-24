@@ -32,6 +32,54 @@ export const encodeFileToBase64 = (buffer: Buffer): string => {
   return buffer.toString('base64');
 };
 
+// Function to estimate the number of pages in a PDF
+export async function estimatePdfPageCount(pdfBase64: string): Promise<number> {
+  try {
+    // Simple heuristic: Count page markers in the PDF binary data
+    const decodedBuffer = Buffer.from(pdfBase64, 'base64');
+    const pdfTextSample = decodedBuffer.toString('ascii', 0, Math.min(decodedBuffer.length, 1000000)); // Analyze up to 1MB
+    
+    // Count occurrences of "/Page" markers which typically indicate pages in a PDF
+    const pageMarkerRegex = /\/Page\s*<<|\/Type\s*\/Page|\/Pages\s*<</g;
+    const pageMarkers = pdfTextSample.match(pageMarkerRegex) || [];
+    
+    // Count occurrences of "/Count" which often indicates page counts in PDF structure
+    const countMarkerRegex = /\/Count\s+(\d+)/g;
+    
+    let estimatedPageCount = 0;
+    let match;
+    const counts: number[] = [];
+    
+    // Use manual regex exec loop instead of matchAll for better compatibility
+    while ((match = countMarkerRegex.exec(pdfTextSample)) !== null) {
+      const count = parseInt(match[1], 10);
+      if (!isNaN(count) && count > 0) {
+        counts.push(count);
+      }
+    }
+    
+    // If we found Count markers with values, use the largest one
+    if (counts.length > 0) {
+      estimatedPageCount = Math.max(...counts);
+    }
+    
+    // If we couldn't estimate from Count markers, use the Page markers as a fallback
+    if (estimatedPageCount === 0 && pageMarkers.length > 0) {
+      estimatedPageCount = pageMarkers.length;
+    }
+    
+    // Set minimum page count to 1 if we couldn't detect any pages
+    estimatedPageCount = Math.max(1, estimatedPageCount);
+    
+    console.log(`PDF page count estimation: Approximately ${estimatedPageCount} pages`);
+    return estimatedPageCount;
+  } catch (error) {
+    console.error('Error during PDF page count estimation:', error);
+    // Default to 1 page if estimation fails
+    return 1;
+  }
+}
+
 // Function to detect if a PDF likely contains scanned content
 async function detectPdfType(pdfBase64: string): Promise<'scanned' | 'structured'> {
   try {

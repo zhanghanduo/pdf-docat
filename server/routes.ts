@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { verifyToken, isAdmin, generateToken } from "./middleware/auth";
 import { loggerMiddleware, logUserAction } from "./middleware/logger";
 import { loginSchema, insertUserSchema, insertProcessingLogSchema, engineTypes } from "@shared/schema";
-import { processPDF } from "./api/openrouter";
+import { processPDF, estimatePdfPageCount } from "./api/openrouter";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -297,6 +297,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Convert file to base64
         const pdfBase64 = req.file.buffer.toString("base64");
         console.log("File converted to base64");
+        
+        // Check the page count and apply limits
+        console.log("Estimating PDF page count");
+        const pageCount = await estimatePdfPageCount(pdfBase64);
+        
+        // Maximum page count allowed (different for different user roles)
+        const MAX_PAGE_COUNT = req.user!.role === "admin" ? 200 : 100;
+        
+        if (pageCount > MAX_PAGE_COUNT) {
+          logUserAction(req.user!.id, "PDF processing error", { 
+            fileName: req.file.originalname, 
+            error: `Page count (${pageCount}) exceeds maximum limit (${MAX_PAGE_COUNT})` 
+          });
+          
+          return res.status(400).json({ 
+            message: `This PDF has approximately ${pageCount} pages, which exceeds the maximum limit of ${MAX_PAGE_COUNT} pages. Please upload a smaller document.`,
+            error: "Page limit exceeded",
+            pageCount: pageCount,
+            maxPages: MAX_PAGE_COUNT
+          });
+        }
         
         // Process the PDF with OpenRouter
         console.log(`Calling OpenRouter API with engine: ${engine}`);

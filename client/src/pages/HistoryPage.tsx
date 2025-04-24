@@ -2,17 +2,25 @@ import React, { useEffect, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Eye, Download } from "lucide-react";
+import { Eye, Download, FileText } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { pdfApi } from "@/lib/api";
-import { ProcessingLog } from "@shared/schema";
-import { formatRelativeTime, exportAsText, exportAsJson } from "@/lib/utils";
+import { ProcessingLog, ExtractedContent } from "@shared/schema";
+import { formatRelativeTime, exportAsText, exportAsJson, exportAsMarkdown } from "@/lib/utils";
 import { Pagination } from "@/components/ui/pagination";
 import { useToast } from "@/hooks/use-toast";
+import { ViewLogContent } from "@/components/ViewLogContent";
 
 const HistoryPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [selectedLog, setSelectedLog] = useState<{
+    id: number;
+    fileName: string;
+    extractedContent: ExtractedContent;
+    processingTime?: number;
+  } | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -38,12 +46,22 @@ const HistoryPage: React.FC = () => {
       const log = await pdfApi.getProcessingLog(logId);
       
       if (log.extractedContent) {
-        // Here you would typically navigate to a view page or open a modal
-        // For simplicity, we'll just show a toast
-        toast({
-          title: "Viewing Log",
-          description: `Viewing content from "${log.fileName}"`,
+        // Calculate processing time from metadata if available, or set a default
+        let processingTime = 0;
+        if (log.processingTime) {
+          processingTime = log.processingTime;
+        } else if (log.metadata?.processingTime) {
+          processingTime = log.metadata.processingTime;
+        }
+        
+        // Set the selected log and open the dialog
+        setSelectedLog({
+          id: log.id,
+          fileName: log.fileName,
+          extractedContent: log.extractedContent,
+          processingTime: processingTime
         });
+        setIsViewDialogOpen(true);
       } else {
         toast({
           title: "No content available",
@@ -65,7 +83,14 @@ const HistoryPage: React.FC = () => {
       const log = await pdfApi.getProcessingLog(logId);
       
       if (log.extractedContent) {
-        exportAsText(log.extractedContent, log.fileName);
+        // Show a dropdown or run a specific export
+        // For now, just export as markdown for better formatting
+        exportAsMarkdown(log.extractedContent, log.fileName);
+        
+        toast({
+          title: "Download started",
+          description: "Your document has been downloaded as markdown"
+        });
       } else {
         toast({
           title: "No content available",
@@ -179,7 +204,7 @@ const HistoryPage: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatRelativeTime(log.timestamp)}
+                          {log.timestamp ? formatRelativeTime(log.timestamp) : 'Unknown date'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {log.engine}
@@ -242,6 +267,13 @@ const HistoryPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* View Log dialog */}
+      <ViewLogContent
+        open={isViewDialogOpen}
+        onOpenChange={setIsViewDialogOpen}
+        log={selectedLog}
+      />
     </Layout>
   );
 };

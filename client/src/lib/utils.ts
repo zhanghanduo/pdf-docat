@@ -261,7 +261,9 @@ export function exportAsJson(content: ExtractedContent, filename: string) {
 }
 
 // Format relative time (e.g., "2 hours ago")
-export function formatRelativeTime(date: Date | string): string {
+export function formatRelativeTime(date: Date | string | null): string {
+  if (!date) return 'Unknown date';
+  
   const now = new Date();
   const past = new Date(date);
   const diffMs = now.getTime() - past.getTime();

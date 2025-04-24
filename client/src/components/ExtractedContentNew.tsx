@@ -158,12 +158,13 @@ export const ExtractedContentNew: React.FC<ExtractedContentProps> = ({
                               </thead>
                               <tbody className="bg-white divide-y divide-gray-200">
                                 {item.rows?.map((row, rowIndex) => {
+                                  // Safe non-nullable reference to headers
+                                  const headers = item.headers || [];
                                   // Ensure row has same number of cells as headers
-                                  const headerLength = item.headers?.length || 0;
-                                  const safeRow = row.length < headerLength 
-                                    ? [...row, ...Array(headerLength - row.length).fill('')] 
-                                    : row.length > headerLength 
-                                      ? row.slice(0, headerLength) 
+                                  const safeRow = row.length < headers.length 
+                                    ? [...row, ...Array(headers.length - row.length).fill('')] 
+                                    : row.length > headers.length 
+                                      ? row.slice(0, headers.length) 
                                       : row;
                                       
                                   return (
@@ -206,12 +207,13 @@ export const ExtractedContentNew: React.FC<ExtractedContentProps> = ({
                               </thead>
                               <tbody className="bg-white divide-y divide-blue-100">
                                 {item.translatedRows?.map((row, rowIndex) => {
+                                  // Safe non-nullable reference to translatedHeaders
+                                  const translatedHeaders = item.translatedHeaders || [];
                                   // Ensure row has same number of cells as headers
-                                  const translatedHeaderLength = item.translatedHeaders?.length || 0;
-                                  const safeRow = row.length < translatedHeaderLength 
-                                    ? [...row, ...Array(translatedHeaderLength - row.length).fill('')] 
-                                    : row.length > translatedHeaderLength 
-                                      ? row.slice(0, translatedHeaderLength) 
+                                  const safeRow = row.length < translatedHeaders.length 
+                                    ? [...row, ...Array(translatedHeaders.length - row.length).fill('')] 
+                                    : row.length > translatedHeaders.length 
+                                      ? row.slice(0, translatedHeaders.length) 
                                       : row;
                                       
                                   return (

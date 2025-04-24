@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, LogOut } from "lucide-react";
+import { Menu, X, LogOut, FileText, History, Settings, Cat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -37,7 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
   };
 
   return (
-    <nav className="bg-white shadow-sm">
+    <nav className="bg-white dark:bg-gray-900 shadow-sm sticky top-0 z-50 glass-effect">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
@@ -52,40 +52,28 @@ export const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
                   <Menu className="h-6 w-6" />
                 )}
               </button>
-              <span className="text-2xl font-bold text-primary">DocuMind</span>
+              <div className="flex items-center gap-2">
+                <Cat className="w-8 h-8 text-primary" />
+                <span className="text-2xl font-bold gradient-heading">DocCat</span>
+              </div>
             </div>
-            <div className="hidden md:ml-6 md:flex md:space-x-8">
+            <div className="hidden md:ml-6 md:flex md:space-x-4">
               <Link href="/dashboard">
-                <a
-                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                    location === "/dashboard"
-                      ? "border-primary text-gray-900"
-                      : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                  }`}
-                >
+                <a className={`nav-item ${location === "/dashboard" ? "active" : ""}`}>
+                  <FileText className="w-4 h-4" />
                   Dashboard
                 </a>
               </Link>
               <Link href="/history">
-                <a
-                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                    location === "/history"
-                      ? "border-primary text-gray-900"
-                      : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                  }`}
-                >
+                <a className={`nav-item ${location === "/history" ? "active" : ""}`}>
+                  <History className="w-4 h-4" />
                   History
                 </a>
               </Link>
               {isAdmin && (
                 <Link href="/settings">
-                  <a
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                      location === "/settings"
-                        ? "border-primary text-gray-900"
-                        : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                    }`}
-                  >
+                  <a className={`nav-item ${location === "/settings" ? "active" : ""}`}>
+                    <Settings className="w-4 h-4" />
                     Settings
                   </a>
                 </Link>

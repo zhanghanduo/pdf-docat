@@ -663,7 +663,15 @@ function mergeDocumentChunks(
   
   // Add content from each chunk
   for (const result of results) {
-    // Add page range marker
+    // Add page range marker with proper separator
+    if (mergedItems.length > 1) {
+      // Add page separator before starting a new page (except for first page)
+      mergedItems.push({
+        type: "text",
+        content: "---"
+      });
+    }
+    
     mergedItems.push({
       type: "heading",
       content: `Pages ${result.pageRange.start}-${result.pageRange.end}`

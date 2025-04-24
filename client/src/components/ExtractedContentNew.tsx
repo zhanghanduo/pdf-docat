@@ -137,38 +137,54 @@ export const ExtractedContentNew: React.FC<ExtractedContentProps> = ({
                         ? "grid grid-cols-1 gap-6 mt-4" 
                         : ""}>
                         <div className="overflow-x-auto">
-                          <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                              <tr>
-                                {item.headers?.map((header, headerIndex) => (
-                                  <th
-                                    key={headerIndex}
-                                    scope="col"
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                  >
-                                    {header}
-                                  </th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                              {item.rows?.map((row, rowIndex) => (
-                                <tr
-                                  key={rowIndex}
-                                  className={rowIndex % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                                >
-                                  {row.map((cell, cellIndex) => (
-                                    <td
-                                      key={cellIndex}
-                                      className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          {!item.headers || !item.rows || item.headers.length === 0 || item.rows.length === 0 ? (
+                            <div className="p-4 border border-gray-200 rounded bg-gray-50">
+                              <p className="text-gray-500">Table could not be rendered (missing data)</p>
+                            </div>
+                          ) : (
+                            <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  {item.headers?.map((header, headerIndex) => (
+                                    <th
+                                      key={headerIndex}
+                                      scope="col"
+                                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200"
                                     >
-                                      {cell}
-                                    </td>
+                                      {header}
+                                    </th>
                                   ))}
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {item.rows?.map((row, rowIndex) => {
+                                  // Ensure row has same number of cells as headers
+                                  const headerLength = item.headers?.length || 0;
+                                  const safeRow = row.length < headerLength 
+                                    ? [...row, ...Array(headerLength - row.length).fill('')] 
+                                    : row.length > headerLength 
+                                      ? row.slice(0, headerLength) 
+                                      : row;
+                                      
+                                  return (
+                                    <tr
+                                      key={rowIndex}
+                                      className={rowIndex % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                                    >
+                                      {safeRow.map((cell, cellIndex) => (
+                                        <td
+                                          key={cellIndex}
+                                          className="px-6 py-4 text-sm text-gray-500 border border-gray-200"
+                                        >
+                                          {cell}
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          )}
                         </div>
                         
                         {item.translatedHeaders && item.translatedRows && (
@@ -181,7 +197,7 @@ export const ExtractedContentNew: React.FC<ExtractedContentProps> = ({
                                     <th
                                       key={headerIndex}
                                       scope="col"
-                                      className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider"
+                                      className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider border border-blue-200"
                                     >
                                       {header}
                                     </th>
@@ -189,21 +205,31 @@ export const ExtractedContentNew: React.FC<ExtractedContentProps> = ({
                                 </tr>
                               </thead>
                               <tbody className="bg-white divide-y divide-blue-100">
-                                {item.translatedRows?.map((row, rowIndex) => (
-                                  <tr
-                                    key={rowIndex}
-                                    className={rowIndex % 2 === 0 ? "bg-white" : "bg-blue-50"}
-                                  >
-                                    {row.map((cell, cellIndex) => (
-                                      <td
-                                        key={cellIndex}
-                                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-700"
-                                      >
-                                        {cell}
-                                      </td>
-                                    ))}
-                                  </tr>
-                                ))}
+                                {item.translatedRows?.map((row, rowIndex) => {
+                                  // Ensure row has same number of cells as headers
+                                  const translatedHeaderLength = item.translatedHeaders?.length || 0;
+                                  const safeRow = row.length < translatedHeaderLength 
+                                    ? [...row, ...Array(translatedHeaderLength - row.length).fill('')] 
+                                    : row.length > translatedHeaderLength 
+                                      ? row.slice(0, translatedHeaderLength) 
+                                      : row;
+                                      
+                                  return (
+                                    <tr
+                                      key={rowIndex}
+                                      className={rowIndex % 2 === 0 ? "bg-white" : "bg-blue-50"}
+                                    >
+                                      {safeRow.map((cell, cellIndex) => (
+                                        <td
+                                          key={cellIndex}
+                                          className="px-6 py-4 text-sm text-gray-700 border border-blue-100"
+                                        >
+                                          {cell}
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  );
+                                })}
                               </tbody>
                             </table>
                           </div>

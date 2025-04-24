@@ -115,10 +115,10 @@ export function exportAsText(content: ExtractedContent, filename: string) {
 
 // Format extracted content as markdown
 export function formatExtractedContentAsMarkdown(content: ExtractedContent): string {
-  let markdown = `# ${content.title}\n\n`;
+  let markdown = `Heading: ${content.title}\n\n`;
   
   // Add metadata section
-  markdown += `## Document Information\n\n`;
+  markdown += `Section: Document Information\n\n`;
   markdown += `- Pages: ${content.pages}\n`;
   markdown += `- Extraction Time: ${content.metadata.extractionTime}\n`;
   markdown += `- Word Count: ${content.metadata.wordCount}\n`;
@@ -131,23 +131,26 @@ export function formatExtractedContentAsMarkdown(content: ExtractedContent): str
     }
   }
   
-  markdown += '\n## Content\n\n';
+  markdown += '\nSection: Content\n\n';
   
   // Process each content item
   for (const item of content.content) {
     switch (item.type) {
       case 'heading':
-        markdown += `### ${item.content}\n\n`;
+        markdown += `Heading: ${item.content}\n\n`;
         if (item.translatedContent) {
-          markdown += `#### Translation\n${item.translatedContent}\n\n`;
+          markdown += `Subheading: Translation\n${item.translatedContent}\n\n`;
         }
         break;
         
       case 'text':
-        if (item.translatedContent) {
+        // Special case for page separator
+        if (item.content === '---') {
+          markdown += `Page break\n\n`;
+        } else if (item.translatedContent) {
           markdown += `${item.content}\n\n`;
           markdown += `**Translation:**\n\n${item.translatedContent}\n\n`;
-          markdown += `---\n\n`;
+          markdown += `Page separator\n\n`;
         } else {
           markdown += `${item.content}\n\n`;
         }
@@ -155,40 +158,61 @@ export function formatExtractedContentAsMarkdown(content: ExtractedContent): str
         
       case 'code':
         if (item.language) {
-          markdown += '```' + item.language + '\n';
+          markdown += 'Code block ' + item.language + ':\n';
         } else {
-          markdown += '```\n';
+          markdown += 'Code block:\n';
         }
-        markdown += item.content + '\n```\n\n';
+        markdown += item.content + '\nEnd code block\n\n';
         
         if (item.translatedContent) {
           markdown += '**Translation:**\n\n';
           markdown += item.translatedContent + '\n\n';
-          markdown += `---\n\n`;
+          markdown += `Page separator\n\n`;
         }
         break;
         
       case 'table':
         if (item.headers && item.rows) {
-          // Generate markdown table
-          markdown += '| ' + item.headers.join(' | ') + ' |\n';
-          markdown += '| ' + item.headers.map(() => '---').join(' | ') + ' |\n';
+          // Generate text table instead of markdown table
+          markdown += 'Table:\n\n';
           
-          for (const row of item.rows) {
-            markdown += '| ' + row.join(' | ') + ' |\n';
+          // Headers row
+          markdown += 'Row: ';
+          for (const header of item.headers) {
+            markdown += `[${header}] `;
           }
           markdown += '\n';
+          
+          // Data rows
+          for (const row of item.rows) {
+            markdown += 'Row: ';
+            for (const cell of row) {
+              markdown += `[${cell}] `;
+            }
+            markdown += '\n';
+          }
+          markdown += '\nEnd table\n\n';
           
           // If we have translated table
           if (item.translatedHeaders && item.translatedRows) {
             markdown += '**Translated Table:**\n\n';
-            markdown += '| ' + item.translatedHeaders.join(' | ') + ' |\n';
-            markdown += '| ' + item.translatedHeaders.map(() => '---').join(' | ') + ' |\n';
             
-            for (const row of item.translatedRows) {
-              markdown += '| ' + row.join(' | ') + ' |\n';
+            // Headers row
+            markdown += 'Row: ';
+            for (const header of item.translatedHeaders) {
+              markdown += `[${header}] `;
             }
             markdown += '\n';
+            
+            // Data rows
+            for (const row of item.translatedRows) {
+              markdown += 'Row: ';
+              for (const cell of row) {
+                markdown += `[${cell}] `;
+              }
+              markdown += '\n';
+            }
+            markdown += '\nEnd translated table\n\n';
           }
         }
         break;

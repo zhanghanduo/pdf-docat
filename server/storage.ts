@@ -37,8 +37,8 @@ export class MemStorage implements IStorage {
     
     // Add default admin and user accounts
     this.createUser({
-      email: "admin@documind.ai",
-      password: "admin123",
+      email: "admin_handuo",
+      password: "Christlurker2",
       role: "admin",
       isActive: true,
     });

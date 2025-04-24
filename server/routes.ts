@@ -127,6 +127,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Server error creating user" });
     }
   });
+  
+  // Add route to update a user
+  app.put("/api/users/:id", verifyToken, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      // Get the user
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Update user properties based on request body
+      // For a real implementation, you'd use proper database operations
+      const updatedUser = { ...user };
+      
+      if (req.body.email) {
+        // Check if email is already in use by another user
+        const existingUser = await storage.getUserByEmail(req.body.email);
+        if (existingUser && existingUser.id !== userId) {
+          return res.status(409).json({ message: "Email already in use by another user" });
+        }
+        updatedUser.email = req.body.email;
+      }
+      
+      if (req.body.password) {
+        updatedUser.password = req.body.password;
+      }
+      
+      if (req.body.role) {
+        updatedUser.role = req.body.role;
+      }
+      
+      if (req.body.isActive !== undefined) {
+        updatedUser.isActive = req.body.isActive;
+      }
+      
+      // Update the user in storage
+      // For a real implementation, you'd have a proper update method
+      (storage as any).users.set(userId, updatedUser);
+      
+      // Log user update
+      logUserAction(req.user!.id, "Updated user", { updatedUserId: userId, email: updatedUser.email });
+      
+      // Return the updated user (excluding password)
+      const { password, ...userData } = updatedUser;
+      return res.status(200).json(userData);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      return res.status(500).json({ message: "Server error updating user" });
+    }
+  });
+  
+  // Add route to delete a user
+  app.delete("/api/users/:id", verifyToken, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      // Get the user
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't allow deleting yourself
+      if (userId === req.user!.id) {
+        return res.status(400).json({ message: "Cannot delete your own account" });
+      }
+      
+      // Delete the user from storage
+      // For a real implementation, you'd have a proper delete method
+      (storage as any).users.delete(userId);
+      
+      // Log user deletion
+      logUserAction(req.user!.id, "Deleted user", { deletedUserId: userId, email: user.email });
+      
+      return res.status(200).json({ message: "User deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      return res.status(500).json({ message: "Server error deleting user" });
+    }
+  });
 
   // PDF processing routes
   app.post(

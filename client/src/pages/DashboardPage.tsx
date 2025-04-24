@@ -452,7 +452,7 @@ const DashboardPage: React.FC = () => {
                   <div className="h-20 flex items-center justify-center">
                     <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
                   </div>
-                ) : creditLogs.length === 0 ? (
+                ) : !creditLogs || creditLogs.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <p>No credit usage history yet.</p>
                     <p className="text-sm mt-2">Process your first document to start tracking usage.</p>

@@ -20,6 +20,25 @@ const translations: Record<string, Record<string, string>> = {
     'dashboard': 'Dashboard',
     'history': 'History',
     'settings': 'Settings',
+    'usage': 'Usage & Credits',
+    
+    // Registration and Auth
+    'registration.title': 'Create Account',
+    'registration.name': 'Full name',
+    'registration.namePlaceholder': 'Your name',
+    'registration.email': 'Email address',
+    'registration.emailPlaceholder': 'Your email',
+    'registration.password': 'Password',
+    'registration.passwordPlaceholder': 'Create a secure password',
+    'registration.confirmPassword': 'Confirm password',
+    'registration.confirmPasswordPlaceholder': 'Repeat your password',
+    'registration.submit': 'Sign Up',
+    'registration.submitting': 'Creating account...',
+    'registration.success': 'Registration successful',
+    'registration.successDesc': 'Your account has been created',
+    'registration.failed': 'Registration failed',
+    'registration.alreadyHaveAccount': 'Already have an account?',
+    'registration.signIn': 'Sign in',
     
     // Dashboard page
     'pdf_extraction': 'PDF Content Extraction',
@@ -156,6 +175,25 @@ const translations: Record<string, Record<string, string>> = {
     'dashboard': '仪表板',
     'history': '历史记录',
     'settings': '设置',
+    'usage': '使用情况与额度',
+    
+    // Registration and Auth
+    'registration.title': '创建账号',
+    'registration.name': '姓名',
+    'registration.namePlaceholder': '您的姓名',
+    'registration.email': '电子邮箱',
+    'registration.emailPlaceholder': '您的邮箱地址',
+    'registration.password': '密码',
+    'registration.passwordPlaceholder': '创建安全密码',
+    'registration.confirmPassword': '确认密码',
+    'registration.confirmPasswordPlaceholder': '再次输入密码',
+    'registration.submit': '注册',
+    'registration.submitting': '正在创建账号...',
+    'registration.success': '注册成功',
+    'registration.successDesc': '您的账号已创建成功',
+    'registration.failed': '注册失败',
+    'registration.alreadyHaveAccount': '已有账号？',
+    'registration.signIn': '登录',
     
     // Dashboard page
     'pdf_extraction': 'PDF 内容提取',

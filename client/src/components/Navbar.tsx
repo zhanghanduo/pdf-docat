@@ -58,25 +58,28 @@ export const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
               </div>
             </div>
             <div className="hidden md:ml-6 md:flex md:space-x-4">
-              <Link href="/dashboard">
-                <a className={`nav-item ${location === "/dashboard" ? "active" : ""}`}>
-                  <FileText className="w-4 h-4" />
-                  Dashboard
-                </a>
-              </Link>
-              <Link href="/history">
-                <a className={`nav-item ${location === "/history" ? "active" : ""}`}>
-                  <History className="w-4 h-4" />
-                  History
-                </a>
-              </Link>
+              <button 
+                onClick={() => setLocation("/dashboard")} 
+                className={`nav-item ${location === "/dashboard" ? "active" : ""}`}
+              >
+                <FileText className="w-4 h-4" />
+                Dashboard
+              </button>
+              <button 
+                onClick={() => setLocation("/history")} 
+                className={`nav-item ${location === "/history" ? "active" : ""}`}
+              >
+                <History className="w-4 h-4" />
+                History
+              </button>
               {isAdmin && (
-                <Link href="/settings">
-                  <a className={`nav-item ${location === "/settings" ? "active" : ""}`}>
-                    <Settings className="w-4 h-4" />
-                    Settings
-                  </a>
-                </Link>
+                <button 
+                  onClick={() => setLocation("/settings")} 
+                  className={`nav-item ${location === "/settings" ? "active" : ""}`}
+                >
+                  <Settings className="w-4 h-4" />
+                  Settings
+                </button>
               )}
             </div>
           </div>
@@ -104,43 +107,46 @@ export const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
       {showMobileMenu && (
         <div className="md:hidden">
           <div className="pt-2 pb-3 space-y-1">
-            <Link href="/dashboard">
-              <a
-                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-                  location === "/dashboard"
-                    ? "border-primary text-primary bg-primary-50"
-                    : "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
-                }`}
-                onClick={() => setShowMobileMenu(false)}
-              >
-                Dashboard
-              </a>
-            </Link>
-            <Link href="/history">
-              <a
-                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-                  location === "/history"
-                    ? "border-primary text-primary bg-primary-50"
-                    : "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
-                }`}
-                onClick={() => setShowMobileMenu(false)}
-              >
-                History
-              </a>
-            </Link>
+            <button
+              className={`block w-full text-left pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
+                location === "/dashboard"
+                  ? "border-primary text-primary bg-primary-50"
+                  : "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
+              }`}
+              onClick={() => {
+                setLocation("/dashboard");
+                setShowMobileMenu(false);
+              }}
+            >
+              Dashboard
+            </button>
+            <button
+              className={`block w-full text-left pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
+                location === "/history"
+                  ? "border-primary text-primary bg-primary-50"
+                  : "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
+              }`}
+              onClick={() => {
+                setLocation("/history");
+                setShowMobileMenu(false);
+              }}
+            >
+              History
+            </button>
             {isAdmin && (
-              <Link href="/settings">
-                <a
-                  className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-                    location === "/settings"
-                      ? "border-primary text-primary bg-primary-50"
-                      : "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
-                  }`}
-                  onClick={() => setShowMobileMenu(false)}
-                >
-                  Settings
-                </a>
-              </Link>
+              <button
+                className={`block w-full text-left pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
+                  location === "/settings"
+                    ? "border-primary text-primary bg-primary-50"
+                    : "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
+                }`}
+                onClick={() => {
+                  setLocation("/settings");
+                  setShowMobileMenu(false);
+                }}
+              >
+                Settings
+              </button>
             )}
           </div>
         </div>

@@ -103,7 +103,7 @@ export async function processPDF(
     const response = await axios.post(
       API_URL,
       {
-        model: 'anthropic/claude-3-opus:poe', // Use the most powerful model for better extraction
+        model: 'anthropic/claude-3-sonnet:poe', // Using Claude Sonnet for better balance of quality and cost
         messages: [
           {
             role: 'user',
@@ -193,11 +193,17 @@ function parseExtractedContent(content: string, fileName: string): ExtractedCont
     const tableRegex = /\|(.+)\|/g;
     const hasTable = tableRegex.test(content);
     
-    let contentItems = [];
+    let contentItems: Array<{
+      type: "text" | "heading" | "code" | "table";
+      content?: string;
+      language?: string;
+      headers?: string[];
+      rows?: string[][];
+    }> = [];
     
     // Add initial welcome message
     contentItems.push({
-      type: 'heading',
+      type: "heading",
       content: `Extracted Content from ${fileName}`,
     });
     
@@ -209,18 +215,18 @@ function parseExtractedContent(content: string, fileName: string): ExtractedCont
       
       // For now, we'll just add the content with identified table areas
       contentItems.push({
-        type: 'text',
+        type: "text",
         content: 'The following content has been extracted and includes tables:',
       });
       
       contentItems.push({
-        type: 'text',
+        type: "text",
         content: content,
       });
     } else {
       // Just plain text without tables
       contentItems.push({
-        type: 'text',
+        type: "text",
         content: content,
       });
     }
@@ -247,11 +253,11 @@ function parseExtractedContent(content: string, fileName: string): ExtractedCont
       pages: 1,
       content: [
         {
-          type: 'text',
+          type: "text",
           content: 'Content was extracted but could not be properly formatted. Raw content:',
         },
         {
-          type: 'text',
+          type: "text",
           content: content || 'No content available',
         },
       ],

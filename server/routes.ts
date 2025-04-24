@@ -223,10 +223,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     upload.single("pdf"),
     async (req: Request, res: Response) => {
       try {
+        console.log("PDF processing request received");
+        
         // Verify file was uploaded
         if (!req.file) {
           return res.status(400).json({ message: "No PDF file provided" });
         }
+        
+        // Check file size (max 25MB)
+        const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB in bytes
+        if (req.file.size > MAX_FILE_SIZE) {
+          logUserAction(req.user!.id, "PDF processing error", { 
+            fileName: req.file.originalname, 
+            error: "File too large (max 25MB)" 
+          });
+          return res.status(400).json({ 
+            message: "File size exceeds the maximum limit of 25MB",
+            error: "File too large"
+          });
+        }
+        
+        // Check file type
+        if (req.file.mimetype !== 'application/pdf') {
+          logUserAction(req.user!.id, "PDF processing error", { 
+            fileName: req.file.originalname, 
+            error: "Invalid file type" 
+          });
+          return res.status(400).json({ 
+            message: "Invalid file type. Only PDF files are accepted",
+            error: "Invalid file type"
+          });
+        }
+        
+        console.log(`Processing PDF: ${req.file.originalname}, Size: ${Math.round(req.file.size / 1024)}KB`);
         
         // Get processing engine from request
         const engine = req.body.engine || "mistral-ocr";
@@ -242,47 +271,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const targetLanguage = req.body.targetLanguage || 'simplified-chinese';
         const dualLanguage = req.body.dualLanguage === 'true';
         
+        // Start timing for processing
+        const startTime = Date.now();
+        
         // Convert file to base64
         const pdfBase64 = req.file.buffer.toString("base64");
+        console.log("File converted to base64");
         
-        // Process the PDF with OpenRouter
-        const { extractedContent, fileAnnotations: newFileAnnotations } = await processPDF(
-          pdfBase64,
-          req.file.originalname,
-          engine,
-          fileAnnotations,
-          {
-            translateEnabled,
-            targetLanguage,
-            dualLanguage
-          }
-        );
+        try {
+          // Process the PDF with OpenRouter
+          console.log(`Calling OpenRouter API with engine: ${engine}`);
+          const { extractedContent, fileAnnotations: newFileAnnotations } = await processPDF(
+            pdfBase64,
+            req.file.originalname,
+            engine,
+            fileAnnotations,
+            {
+              translateEnabled,
+              targetLanguage,
+              dualLanguage
+            }
+          );
+          
+          // Calculate processing time
+          const processingTime = Date.now() - startTime;
+          console.log(`PDF processed successfully in ${processingTime}ms`);
+          
+          // Create processing log
+          const log = await storage.createProcessingLog({
+            userId: req.user!.id,
+            fileName: req.file.originalname,
+            fileSize: req.file.size,
+            engine: engine,
+            status: "completed",
+            processingTime: processingTime,
+            extractedContent,
+            fileAnnotations: newFileAnnotations ? JSON.parse(newFileAnnotations) : null,
+          });
+          
+          // Log PDF processing
+          logUserAction(req.user!.id, "Processed PDF", {
+            fileName: req.file.originalname,
+            fileSize: req.file.size,
+            engine,
+          });
+          
+          // Return the extracted content and file annotations
+          return res.status(200).json({
+            extractedContent,
+            fileAnnotations: newFileAnnotations,
+            logId: log.id,
+          });
+        } catch (error) {
+          throw error; // Rethrow to be caught by the outer try-catch
+        }
         
-        // Create processing log
-        const log = await storage.createProcessingLog({
-          userId: req.user!.id,
-          fileName: req.file.originalname,
-          fileSize: req.file.size,
-          engine: engine,
-          status: "completed",
-          processingTime: 3000, // Mock processing time in ms
-          extractedContent,
-          fileAnnotations: newFileAnnotations ? JSON.parse(newFileAnnotations) : null,
-        });
-        
-        // Log PDF processing
-        logUserAction(req.user!.id, "Processed PDF", {
-          fileName: req.file.originalname,
-          fileSize: req.file.size,
-          engine,
-        });
-        
-        // Return the extracted content and file annotations
-        return res.status(200).json({
-          extractedContent,
-          fileAnnotations: newFileAnnotations,
-          logId: log.id,
-        });
+        // This code is unreachable because we either returned in the try block
+        // or we rethrew the error to be caught by the outer catch block
       } catch (error) {
         console.error("Error processing PDF:", error);
         

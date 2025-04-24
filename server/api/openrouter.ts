@@ -126,27 +126,22 @@ export async function processPDF(
       'X-Title': 'DocCat PDF Extractor'
     };
     
-    // Try a completely different authentication approach - using query parameter
-    let API_URL: string;
+    // Try a hybrid authentication approach
+    let API_URL: string = BASE_API_URL;
     if (API_KEY) {
       // Clean up the key to avoid any formatting issues
       const cleanKey = API_KEY.trim().replace(/\s+/g, '');
       
-      // Instead of using any headers for authentication, append the API key
-      // as a query parameter to bypass JWT validation completely
-      API_URL = `${BASE_API_URL}?api_key=${encodeURIComponent(cleanKey)}`;
+      // Use standard Authorization Bearer token in header (most common API pattern)
+      headers['Authorization'] = `Bearer ${cleanKey}`;
       
-      console.log('Using API key as URL query parameter to bypass JWT validation');
+      console.log('Using standard Bearer token authentication in header');
       console.log(`API key starts with: ${cleanKey.substring(0, 5)}...`);
-      
-      // Not using any Authorization header at all
-      console.log('No Authorization header being used - using URL parameter instead');
     } else {
-      API_URL = BASE_API_URL;
       console.error('No API key provided for OpenRouter');
     }
     
-    console.log('Sending request with API key in URL query parameter');
+    console.log('Sending request with Bearer token authentication');
     
     // Make the API request to OpenRouter
     console.log('API request details:');

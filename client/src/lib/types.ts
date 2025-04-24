@@ -54,5 +54,36 @@ export interface ProcessingLogResponse {
 // User types
 export type UserListResponse = User[];
 
+// Account and credit types
+export interface AccountInfoResponse {
+  user: User;
+  lastActive: string;
+}
+
+export interface CreditInfoResponse {
+  used: number;
+  limit: number;
+  tier: string;
+}
+
+export interface CreditLog {
+  id: number;
+  userId: number;
+  amount: number;
+  documentId?: number;
+  description: string;
+  createdAt: string;
+}
+
+export interface CreditLogResponse {
+  logs: CreditLog[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+  };
+}
+
 // Navigation types
 export type Page = 'login' | 'dashboard' | 'history' | 'settings';

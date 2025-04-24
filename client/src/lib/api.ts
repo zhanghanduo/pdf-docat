@@ -63,6 +63,22 @@ export const userApi = {
     const response = await api.delete(`/users/${userId}`);
     return response.data;
   },
+  
+  // User account and credits
+  getAccountInfo: async () => {
+    const response = await api.get('/account');
+    return response.data;
+  },
+  
+  getCredits: async () => {
+    const response = await api.get('/credits');
+    return response.data;
+  },
+  
+  getCreditLogs: async (page = 1, limit = 10) => {
+    const response = await api.get(`/credit-logs?page=${page}&limit=${limit}`);
+    return response.data;
+  },
 };
 
 // PDF processing API

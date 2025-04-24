@@ -3,6 +3,7 @@ import { ExtractedContent as ExtractedContentType } from "@shared/schema";
 import { Clock, FileText, AlertTriangle, InfoIcon, Zap, Calendar } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatRelativeTime } from "@/lib/utils";
+import { useLanguage } from "@/hooks/use-language";
 
 interface DocumentInfoProps {
   content: ExtractedContentType;
@@ -15,6 +16,7 @@ export const DocumentInfo: React.FC<DocumentInfoProps> = ({
   fileName,
   processingTime
 }) => {
+  const { t } = useLanguage();
   const hasErrors = content.content.some(
     (item) => item.content?.includes("很抱歉") || item.content?.includes("error")
   );
@@ -29,18 +31,18 @@ export const DocumentInfo: React.FC<DocumentInfoProps> = ({
       <CardContent className="p-4">
         <h4 className="text-md font-semibold flex items-center gap-2 mb-4">
           <InfoIcon size={16} className="text-gray-500" />
-          Document Information
+          {t('document_info')}
         </h4>
         
         <div className="space-y-4">
           <div>
             <h5 className="text-sm font-medium text-gray-700 flex items-center gap-1">
               <FileText size={14} />
-              File Details
+              {t('file_details')}
             </h5>
             <p className="text-sm text-gray-600 mt-1">
               {fileName}<br />
-              Pages: {content.pages}
+              {t('pages')}: {content.pages}
             </p>
           </div>
           
@@ -48,14 +50,14 @@ export const DocumentInfo: React.FC<DocumentInfoProps> = ({
           <div>
             <h5 className="text-sm font-medium text-gray-700 flex items-center gap-1">
               <Clock size={14} />
-              Processing Details
+              {t('processing_details')}
             </h5>
             <p className="text-sm text-gray-600 mt-1">
-              Processed on: {formattedDate} at {formattedTime}<br />
-              Word count: {content.metadata.wordCount} words<br />
-              Confidence: {(content.metadata.confidence * 100).toFixed(1)}%
+              {t('processed_on')}: {formattedDate} {t('at')} {formattedTime}<br />
+              {t('word_count')}: {content.metadata.wordCount} {t('words')}<br />
+              {t('confidence')}: {(content.metadata.confidence * 100).toFixed(1)}%
               {processingTime && (
-                <><br />Processing time: {(processingTime / 1000).toFixed(1)} seconds</>
+                <><br />{t('processing_duration')}: {(processingTime / 1000).toFixed(1)} {t('seconds')}</>
               )}
             </p>
           </div>
@@ -64,11 +66,11 @@ export const DocumentInfo: React.FC<DocumentInfoProps> = ({
           <div>
             <h5 className="text-sm font-medium text-gray-700 flex items-center gap-1">
               <Zap size={14} />
-              Engine Details
+              {t('engine_details')}
             </h5>
             <p className="text-sm text-gray-600 mt-1">
-              Model: Claude-3-Sonnet<br />
-              Provider: Anthropic via OpenRouter
+              {t('model')}: Claude-3-Sonnet<br />
+              {t('provider')}: Anthropic via OpenRouter
             </p>
           </div>
           
@@ -85,12 +87,12 @@ export const DocumentInfo: React.FC<DocumentInfoProps> = ({
                   <path d="M22 11H10" />
                   <path d="M15 9v2" />
                 </svg>
-                Translation Information
+                {t('translation_information')}
               </h5>
               <p className="text-sm text-gray-600 mt-1">
-                Source language: {content.metadata.sourceLanguage || "Auto-detected"}<br />
-                Target language: {content.metadata.targetLanguage || "English"}<br />
-                Translation type: {content.content.some(item => item.translatedContent) ? "Full document" : "Partial"}
+                {t('source_language')}: {content.metadata.sourceLanguage || t('auto_detected')}<br />
+                {t('target_language')}: {content.metadata.targetLanguage || t('english')}<br />
+                {t('translation_type')}: {content.content.some(item => item.translatedContent) ? t('full_document') : t('partial')}
               </p>
             </div>
           )}
@@ -100,10 +102,10 @@ export const DocumentInfo: React.FC<DocumentInfoProps> = ({
             <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
               <h5 className="text-sm font-medium text-amber-800 flex items-center gap-1">
                 <AlertTriangle size={14} className="text-amber-500" />
-                Processing Note
+                {t('processing_note')}
               </h5>
               <p className="text-sm text-amber-700 mt-1">
-                The extraction encountered some issues. Please check the content or try uploading again.
+                {t('extraction_issues')}
               </p>
             </div>
           )}

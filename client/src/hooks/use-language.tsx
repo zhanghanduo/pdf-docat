@@ -53,14 +53,29 @@ const translations: Record<string, Record<string, string>> = {
     
     // Document info
     'document_info': 'Document Information',
+    'file_details': 'File Details',
     'file_name': 'File Name',
     'pages': 'Pages',
+    'processing_details': 'Processing Details',
+    'processed_on': 'Processed on',
+    'at': 'at',
     'word_count': 'Word Count',
+    'words': 'words',
     'confidence': 'Confidence',
     'processing_duration': 'Processing Time',
     'seconds': 'seconds',
+    'engine_details': 'Engine Details',
+    'model': 'Model',
+    'provider': 'Provider',
+    'translation_information': 'Translation Information',
     'source_language': 'Source Language',
     'target_language': 'Target Language',
+    'translation_type': 'Translation type',
+    'full_document': 'Full document',
+    'partial': 'Partial',
+    'auto_detected': 'Auto-detected',
+    'processing_note': 'Processing Note',
+    'extraction_issues': 'The extraction encountered some issues. Please check the content or try uploading again.',
     
     // Translation options
     'translation_options': 'Translation Options',
@@ -163,7 +178,9 @@ const translations: Record<string, Record<string, string>> = {
     
     // Extract content
     'extracted_content': '提取的内容',
-    'content_extracted': '从您的文档中提取的内容',
+    'content_extracted': '从您的文档中提取的内容', 
+    'table_missing_data': '表格无法渲染（缺少数据）',
+    'translated_table': '翻译后的表格',
     
     // PDF Dropzone
     'upload_pdf_document': '上传 PDF 文档',
@@ -184,14 +201,29 @@ const translations: Record<string, Record<string, string>> = {
     
     // Document info
     'document_info': '文档信息',
+    'file_details': '文件详情',
     'file_name': '文件名',
     'pages': '页数',
+    'processing_details': '处理详情',
+    'processed_on': '处理时间',
+    'at': '于',
     'word_count': '字数',
+    'words': '词',
     'confidence': '置信度',
     'processing_duration': '处理时间',
     'seconds': '秒',
+    'engine_details': '引擎详情',
+    'model': '模型',
+    'provider': '提供商',
+    'translation_information': '翻译信息',
     'source_language': '源语言',
     'target_language': '目标语言',
+    'translation_type': '翻译类型',
+    'full_document': '完整文档',
+    'partial': '部分内容',
+    'auto_detected': '自动检测',
+    'processing_note': '处理说明',
+    'extraction_issues': '提取过程中遇到一些问题。请检查内容或尝试重新上传。',
     
     // Translation options
     'translation_options': '翻译选项',

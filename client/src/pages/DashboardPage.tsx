@@ -8,6 +8,7 @@ import { TranslationOptions } from "@/components/TranslationOptions";
 import { LoadingState } from "@/components/LoadingState";
 import { ExtractedContentNew as ExtractedContent } from "@/components/ExtractedContentNew";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/hooks/use-language";
 import { pdfApi } from "@/lib/api";
 import { 
   ProcessingStatus, 
@@ -30,6 +31,7 @@ const DashboardPage: React.FC = () => {
   const [retryCount, setRetryCount] = useState<number>(0);
   const [processingTime, setProcessingTime] = useState<number>(0);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const handleFileSelected = useCallback((file: File) => {
     setSelectedFile(file);
@@ -42,8 +44,8 @@ const DashboardPage: React.FC = () => {
   const processFile = useCallback(async () => {
     if (!selectedFile) {
       toast({
-        title: "No file selected",
-        description: "Please upload a PDF file to process",
+        title: t("No file selected"),
+        description: t("Please upload a PDF file to process"),
         variant: "destructive",
       });
       return;
@@ -109,26 +111,26 @@ const DashboardPage: React.FC = () => {
       // Check if this was a cached response
       if (response.cached) {
         toast({
-          title: "Duplicate Document Detected",
-          description: `This file was previously processed. Using cached results (completed in ${(totalProcessingTime / 1000).toFixed(1)} seconds)`,
+          title: t("Duplicate Document Detected"),
+          description: t(`This file was previously processed. Using cached results (completed in ${(totalProcessingTime / 1000).toFixed(1)} seconds)`),
           variant: "default",
           className: "bg-blue-50 border-blue-200",
         });
       } else {
         toast({
-          title: "Processing complete",
-          description: `Your PDF has been successfully processed in ${(totalProcessingTime / 1000).toFixed(1)} seconds`,
+          title: t("Processing complete"),
+          description: t(`Your PDF has been successfully processed in ${(totalProcessingTime / 1000).toFixed(1)} seconds`),
         });
       }
     } catch (error: any) {
       // Store the error message for display in the LoadingState component
-      const errorMsg = error.message || "An unknown error occurred while processing the PDF";
+      const errorMsg = error.message || t("An unknown error occurred while processing the PDF");
       setErrorMessage(errorMsg);
       setProcessingStatus("error");
       
       // Show toast notification for the error
       toast({
-        title: "Processing failed",
+        title: t("Processing failed"),
         description: errorMsg,
         variant: "destructive",
       });
@@ -151,10 +153,10 @@ const DashboardPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-10 text-center">
           <h1 className="gradient-heading text-4xl font-bold mb-4">
-            PDF Content Extraction
+            {t("PDF Content Extraction")}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Upload your PDF to extract structured content using advanced AI technology.
+            {t("Upload your PDF to extract structured content using advanced AI technology.")}
           </p>
         </div>
 
@@ -164,10 +166,10 @@ const DashboardPage: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
               <div>
                 <h2 className="text-2xl font-semibold text-foreground">
-                  Document Processing
+                  {t("Document Processing")}
                 </h2>
                 <p className="mt-2 text-muted-foreground">
-                  Upload a PDF file to extract text, tables, and structured content.
+                  {t("Upload a PDF file to extract text, tables, and structured content.")}
                 </p>
               </div>
             </div>

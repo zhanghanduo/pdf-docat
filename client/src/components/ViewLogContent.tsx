@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ExtractedContent } from "@shared/schema";
 import { ExtractedContentNew } from "@/components/ExtractedContentNew";
 import { X } from "lucide-react";
+import { useLanguage } from "@/hooks/use-language";
 
 interface ViewLogContentProps {
   open: boolean;
@@ -22,6 +23,8 @@ export const ViewLogContent: React.FC<ViewLogContentProps> = ({
   log
 }) => {
   if (!log) return null;
+  
+  const { t } = useLanguage();
 
   const handleClose = () => {
     onOpenChange(false);
@@ -37,13 +40,13 @@ export const ViewLogContent: React.FC<ViewLogContentProps> = ({
       <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle>Viewing Document: {log.fileName}</DialogTitle>
+            <DialogTitle>{t('viewing_document', log.fileName)}</DialogTitle>
             <Button variant="ghost" size="icon" onClick={handleClose}>
               <X className="h-4 w-4" />
             </Button>
           </div>
           <DialogDescription>
-            Document processed on {new Date(log.extractedContent.metadata.extractionTime).toLocaleString()}
+            {t('document_processed_on', new Date(log.extractedContent.metadata.extractionTime).toLocaleString())}
           </DialogDescription>
         </DialogHeader>
         

@@ -105,7 +105,7 @@ const translations: Record<string, Record<string, string>> = {
     'unknown_date': 'Unknown date',
     'view': 'View',
     'download': 'Download',
-    'showing_page': 'Showing page {0} of {1}',
+    'showing_page': 'Showing page {0}',
     'loading_content': 'Loading content',
     'retrieving_content': 'Retrieving document content...',
     'no_content_available': 'No content available',
@@ -116,6 +116,8 @@ const translations: Record<string, Record<string, string>> = {
     'document_downloaded': 'Your document has been downloaded as markdown',
     'no_content_download': 'This log does not have any extracted content to download',
     'failed_download': 'Failed to download content',
+    'viewing_document': 'Viewing Document: {0}',
+    'document_processed_on': 'Document processed on {0}',
     
     // Misc
     'no_file': 'No file selected',
@@ -206,7 +208,7 @@ const translations: Record<string, Record<string, string>> = {
     'unknown_date': '未知日期',
     'view': '查看',
     'download': '下载',
-    'showing_page': '显示第 {0} 页，共 {1} 页',
+    'showing_page': '显示第 {0}',
     'loading_content': '加载内容',
     'retrieving_content': '正在获取文档内容...',
     'no_content_available': '没有可用内容',
@@ -217,6 +219,8 @@ const translations: Record<string, Record<string, string>> = {
     'document_downloaded': '您的文档已作为 markdown 下载',
     'no_content_download': '此记录没有任何可下载的提取内容',
     'failed_download': '下载内容失败',
+    'viewing_document': '查看文档: {0}',
+    'document_processed_on': '文档处理时间: {0}',
     
     // Misc
     'no_file': '未选择文件',

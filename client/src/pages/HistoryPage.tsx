@@ -123,19 +123,19 @@ const HistoryPage: React.FC = () => {
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-2xl font-semibold text-gray-900">
-          Processing History
+          {t('processing_history')}
         </h1>
         <p className="mt-1 text-sm text-gray-500">
-          View your previously processed documents.
+          {t('view_processed_documents')}
         </p>
 
         <Card className="mt-8">
           <CardHeader>
             <h3 className="text-lg leading-6 font-medium text-gray-900">
-              Recent Documents
+              {t('recent_documents')}
             </h3>
             <p className="mt-1 max-w-2xl text-sm text-gray-500">
-              Your processing history from the last 30 days.
+              {t('processing_history_30days')}
             </p>
           </CardHeader>
           <CardContent>
@@ -147,31 +147,31 @@ const HistoryPage: React.FC = () => {
                       scope="col"
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
-                      Document
+                      {t('document')}
                     </th>
                     <th
                       scope="col"
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
-                      Date
+                      {t('date')}
                     </th>
                     <th
                       scope="col"
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
-                      Engine
+                      {t('engine')}
                     </th>
                     <th
                       scope="col"
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
-                      Status
+                      {t('status')}
                     </th>
                     <th
                       scope="col"
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
-                      Actions
+                      {t('actions')}
                     </th>
                   </tr>
                 </thead>
@@ -179,19 +179,19 @@ const HistoryPage: React.FC = () => {
                   {isLoading ? (
                     <tr>
                       <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
-                        Loading...
+                        {t('loading')}
                       </td>
                     </tr>
                   ) : error ? (
                     <tr>
                       <td colSpan={5} className="px-6 py-4 text-center text-sm text-red-500">
-                        Error loading processing history
+                        {t('error_loading_history')}
                       </td>
                     </tr>
                   ) : data?.logs.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
-                        No processing history found
+                        {t('no_history_found')}
                       </td>
                     </tr>
                   ) : (
@@ -216,7 +216,7 @@ const HistoryPage: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {log.timestamp ? formatRelativeTime(log.timestamp) : 'Unknown date'}
+                          {log.timestamp ? formatRelativeTime(log.timestamp) : t('unknown_date')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {log.engine}
@@ -231,7 +231,7 @@ const HistoryPage: React.FC = () => {
                                 : "bg-yellow-100 text-yellow-800"
                             }`}
                           >
-                            {log.status.charAt(0).toUpperCase() + log.status.slice(1)}
+                            {t(log.status)}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -243,7 +243,7 @@ const HistoryPage: React.FC = () => {
                               onClick={() => handleViewLog(log.id)}
                             >
                               <Eye className="h-4 w-4 mr-1" />
-                              View
+                              {t('view')}
                             </Button>
                             <Button
                               variant="ghost"
@@ -252,7 +252,7 @@ const HistoryPage: React.FC = () => {
                               onClick={() => handleDownload(log.id)}
                             >
                               <Download className="h-4 w-4 mr-1" />
-                              Download
+                              {t('download')}
                             </Button>
                           </div>
                         </td>
@@ -267,7 +267,7 @@ const HistoryPage: React.FC = () => {
             {data && totalPages > 1 && (
               <div className="mt-6 flex items-center justify-between">
                 <div className="text-sm text-gray-700">
-                  Showing page {currentPage} of {totalPages}
+                  {t('showing_page', `${currentPage} of ${totalPages}`)}
                 </div>
                 <Pagination
                   currentPage={currentPage}

@@ -7,10 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { userApi } from "@/lib/api";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { User } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { formatRelativeTime } from "@/lib/utils";
+import { UserFormDialog } from "@/components/UserFormDialog";
+import { ConfirmationDialog } from "@/components/ConfirmationDialog";
+import { Loader2, AlertTriangle } from "lucide-react";
 
 const SettingsPage: React.FC = () => {
   const [apiKey, setApiKey] = useState("••••••••••••••••••••••••••••••");
@@ -18,19 +21,82 @@ const SettingsPage: React.FC = () => {
   const [usageTracking, setUsageTracking] = useState(true);
   const [cacheAnnotations, setCacheAnnotations] = useState(true);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // User dialog states
+  const [userFormOpen, setUserFormOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | undefined>(undefined);
 
   // Fetch users (admin only)
-  const { data: users, isLoading, error } = useQuery({
+  const { data: usersResponse, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/users"],
     queryFn: async () => {
-      try {
-        const response = await userApi.getUsers();
-        return response.users;
-      } catch (error) {
-        console.error("Failed to fetch users:", error);
-        throw error;
-      }
+      const response = await userApi.getUsers();
+      return response;
     },
+  });
+  
+  // Get the users array from the response
+  const users = usersResponse || [];
+
+  // Create user mutation
+  const createUserMutation = useMutation({
+    mutationFn: userApi.createUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({
+        title: "User created",
+        description: "New user has been added successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error creating user",
+        description: error.response?.data?.message || "An error occurred while creating the user",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Update user mutation
+  const updateUserMutation = useMutation({
+    mutationFn: ({ userId, userData }: { userId: number, userData: any }) => 
+      userApi.updateUser(userId, userData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({
+        title: "User updated",
+        description: "User has been updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error updating user",
+        description: error.response?.data?.message || "An error occurred while updating the user",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: userApi.deleteUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({
+        title: "User deleted",
+        description: "User has been deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error deleting user",
+        description: error.response?.data?.message || "An error occurred while deleting the user",
+        variant: "destructive",
+      });
+    }
   });
 
   const handleSaveSettings = () => {
@@ -52,39 +118,37 @@ const SettingsPage: React.FC = () => {
   };
 
   const handleAddUser = () => {
-    // In a real app, this would open a modal to add a new user
-    toast({
-      title: "Feature not implemented",
-      description: "Adding new users is not implemented in this demo",
-    });
+    setSelectedUser(undefined);
+    setUserFormOpen(true);
   };
 
-  const handleEditUser = (userId: number) => {
-    toast({
-      title: "Feature not implemented",
-      description: `Editing user ${userId} is not implemented in this demo`,
-    });
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setUserFormOpen(true);
   };
 
-  const handleDeactivateUser = (userId: number) => {
-    toast({
-      title: "Feature not implemented",
-      description: `Deactivating user ${userId} is not implemented in this demo`,
-    });
+  const handleUserFormSubmit = (data: any) => {
+    if (selectedUser) {
+      // If password is empty in edit mode, remove it from the payload
+      const userData = data.password ? data : { ...data, password: undefined };
+      updateUserMutation.mutate({ 
+        userId: selectedUser.id, 
+        userData 
+      });
+    } else {
+      createUserMutation.mutate(data);
+    }
   };
 
-  const handleApproveUser = (userId: number) => {
-    toast({
-      title: "Feature not implemented",
-      description: `Approving user ${userId} is not implemented in this demo`,
-    });
+  const handleDeleteUser = (user: User) => {
+    setUserToDelete(user);
+    setDeleteDialogOpen(true);
   };
 
-  const handleRejectUser = (userId: number) => {
-    toast({
-      title: "Feature not implemented",
-      description: `Rejecting user ${userId} is not implemented in this demo`,
-    });
+  const confirmDeleteUser = () => {
+    if (userToDelete) {
+      deleteUserMutation.mutate(userToDelete.id);
+    }
   };
 
   return (
@@ -203,39 +267,18 @@ const SettingsPage: React.FC = () => {
                             variant="ghost"
                             size="sm"
                             className="text-primary hover:text-primary/80 mr-2"
-                            onClick={() => handleEditUser(user.id)}
+                            onClick={() => handleEditUser(user)}
                           >
                             Edit
                           </Button>
-                          {user.isActive ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive/80"
-                              onClick={() => handleDeactivateUser(user.id)}
-                            >
-                              Deactivate
-                            </Button>
-                          ) : (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-primary hover:text-primary/80 mr-2"
-                                onClick={() => handleApproveUser(user.id)}
-                              >
-                                Approve
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-destructive hover:text-destructive/80"
-                                onClick={() => handleRejectUser(user.id)}
-                              >
-                                Reject
-                              </Button>
-                            </>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive/80"
+                            onClick={() => handleDeleteUser(user)}
+                          >
+                            Delete
+                          </Button>
                         </td>
                       </tr>
                     ))
@@ -350,6 +393,27 @@ const SettingsPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* User Form Dialog */}
+      <UserFormDialog
+        open={userFormOpen}
+        onOpenChange={setUserFormOpen}
+        onSubmit={handleUserFormSubmit}
+        user={selectedUser}
+        title={selectedUser ? "Edit User" : "Add New User"}
+      />
+      
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDeleteUser}
+        title="Delete User"
+        description={`Are you sure you want to delete ${userToDelete?.email}? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="destructive"
+      />
     </Layout>
   );
 };

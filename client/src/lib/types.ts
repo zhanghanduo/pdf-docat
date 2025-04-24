@@ -51,9 +51,7 @@ export interface ProcessingLogResponse {
 }
 
 // User types
-export interface UserListResponse {
-  users: User[];
-}
+export type UserListResponse = User[];
 
 // Navigation types
 export type Page = 'login' | 'dashboard' | 'history' | 'settings';

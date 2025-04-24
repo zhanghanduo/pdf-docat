@@ -97,9 +97,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
                 {/* Language selector */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="mr-2">
+                    <Button variant="ghost" size="icon" className="mr-3">
                       <Globe className="h-5 w-5" />
-                      <span className="ml-1 text-sm">{t('switch_language')}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -118,7 +117,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                <span className="text-sm font-medium text-gray-700 mr-2">
+                <span className="text-sm font-medium text-gray-700 mr-3">
                   {userData?.email}
                 </span>
                 <Button

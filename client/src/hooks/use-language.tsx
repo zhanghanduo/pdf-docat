@@ -89,6 +89,34 @@ const translations: Record<string, Record<string, string>> = {
     'file_too_large': 'File too large',
     'file_size_exceeds': 'The file exceeds the maximum size of {0}MB.',
     
+    // History page
+    'processing_history': 'Processing History',
+    'view_processed_documents': 'View your previously processed documents.',
+    'recent_documents': 'Recent Documents',
+    'processing_history_30days': 'Your processing history from the last 30 days.',
+    'document': 'Document',
+    'date': 'Date',
+    'engine': 'Engine',
+    'status': 'Status',
+    'actions': 'Actions',
+    'loading': 'Loading...',
+    'error_loading_history': 'Error loading processing history',
+    'no_history_found': 'No processing history found',
+    'unknown_date': 'Unknown date',
+    'view': 'View',
+    'download': 'Download',
+    'showing_page': 'Showing page {0} of {1}',
+    'loading_content': 'Loading content',
+    'retrieving_content': 'Retrieving document content...',
+    'no_content_available': 'No content available',
+    'no_extracted_content': 'This log does not have any extracted content',
+    'error_title': 'Error',
+    'failed_fetch_details': 'Failed to fetch log details',
+    'download_started': 'Download started',
+    'document_downloaded': 'Your document has been downloaded as markdown',
+    'no_content_download': 'This log does not have any extracted content to download',
+    'failed_download': 'Failed to download content',
+    
     // Misc
     'no_file': 'No file selected',
     'please_upload': 'Please upload a PDF file to process',
@@ -96,7 +124,7 @@ const translations: Record<string, Record<string, string>> = {
     'logout': 'Logout',
     'logged_out': 'Logged out successfully',
     'logout_message': 'You have been logged out of your account',
-    'switch_language': '语言'
+    'switch_language': ''
   },
   'zh-CN': {
     // Navigation
@@ -161,6 +189,34 @@ const translations: Record<string, Record<string, string>> = {
     'german': '德语',
     'spanish': '西班牙语',
     'french': '法语',
+    
+    // History page
+    'processing_history': '处理历史',
+    'view_processed_documents': '查看您之前处理过的文档。',
+    'recent_documents': '最近文档',
+    'processing_history_30days': '您过去30天的处理历史。',
+    'document': '文档',
+    'date': '日期',
+    'engine': '引擎',
+    'status': '状态',
+    'actions': '操作',
+    'loading': '加载中...',
+    'error_loading_history': '加载处理历史时出错',
+    'no_history_found': '未找到处理历史',
+    'unknown_date': '未知日期',
+    'view': '查看',
+    'download': '下载',
+    'showing_page': '显示第 {0} 页，共 {1} 页',
+    'loading_content': '加载内容',
+    'retrieving_content': '正在获取文档内容...',
+    'no_content_available': '没有可用内容',
+    'no_extracted_content': '此记录没有任何提取的内容',
+    'error_title': '错误',
+    'failed_fetch_details': '获取记录详情失败',
+    'download_started': '开始下载',
+    'document_downloaded': '您的文档已作为 markdown 下载',
+    'no_content_download': '此记录没有任何可下载的提取内容',
+    'failed_download': '下载内容失败',
     
     // Misc
     'no_file': '未选择文件',

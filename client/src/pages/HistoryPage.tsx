@@ -10,6 +10,7 @@ import { formatRelativeTime, exportAsText, exportAsJson, exportAsMarkdown } from
 import { Pagination } from "@/components/ui/pagination";
 import { useToast } from "@/hooks/use-toast";
 import { ViewLogContent } from "@/components/ViewLogContent";
+import { useLanguage } from "@/hooks/use-language";
 
 const HistoryPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -22,6 +23,7 @@ const HistoryPage: React.FC = () => {
   } | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/processing-logs", currentPage],
@@ -45,8 +47,8 @@ const HistoryPage: React.FC = () => {
     try {
       // Show loading toast
       const loadingToast = toast({
-        title: "Loading content",
-        description: "Retrieving document content...",
+        title: t('loading_content'),
+        description: t('retrieving_content'),
       });
       
       const log = await pdfApi.getProcessingLog(logId);
@@ -73,16 +75,16 @@ const HistoryPage: React.FC = () => {
         setIsViewDialogOpen(true);
       } else {
         toast({
-          title: "No content available",
-          description: "This log does not have any extracted content",
+          title: t('no_content_available'),
+          description: t('no_extracted_content'),
           variant: "destructive",
         });
       }
     } catch (error) {
       console.error("Error fetching log:", error);
       toast({
-        title: "Error",
-        description: "Failed to fetch log details",
+        title: t('error_title'),
+        description: t('failed_fetch_details'),
         variant: "destructive",
       });
     }
@@ -98,20 +100,20 @@ const HistoryPage: React.FC = () => {
         exportAsMarkdown(log.extractedContent, log.fileName);
         
         toast({
-          title: "Download started",
-          description: "Your document has been downloaded as markdown"
+          title: t('download_started'),
+          description: t('document_downloaded')
         });
       } else {
         toast({
-          title: "No content available",
-          description: "This log does not have any extracted content to download",
+          title: t('no_content_available'),
+          description: t('no_content_download'),
           variant: "destructive",
         });
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to download content",
+        title: t('error_title'),
+        description: t('failed_download'),
         variant: "destructive",
       });
     }

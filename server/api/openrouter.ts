@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { EngineType, ExtractedContent } from '@shared/schema';
+import { parseTablesFromText } from './table-parser';
 
 const API_KEY = process.env.OPENROUTER_API_KEY || '';
 const BASE_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -355,8 +356,15 @@ function parseExtractedContent(content: string, fileName: string): ExtractedCont
       console.log('Falling back to text processing');
       
       // Try to identify table structures in the content
-      const tableRegex = /\|(.+)\|/g;
-      const hasTable = tableRegex.test(content);
+      // Advanced table detection with multiple patterns
+      const markdownTableRegex = /\|(.+)\|/g;
+      const asciiTableRegex = /\+[-+]+\+/;
+      const structuredListRegex = /^[\s]*([a-zA-Z0-9]+[\)\.]\s+|[-•*]\s+).+(\n[\s]*([a-zA-Z0-9]+[\)\.]\s+|[-•*]\s+).+)+/m;
+      
+      const hasTable = markdownTableRegex.test(content) || asciiTableRegex.test(content);
+      const hasStructuredList = structuredListRegex.test(content);
+      
+      console.log(`Content analysis: Tables detected: ${hasTable}, Structured lists detected: ${hasStructuredList}`);
       
       // Add initial welcome message
       contentItems.push({
@@ -364,59 +372,256 @@ function parseExtractedContent(content: string, fileName: string): ExtractedCont
         content: `Extracted Content from ${fileName}`,
       });
       
-      // Process content for tables and text sections
-      if (hasTable) {
-        console.log('Tables detected in content, processing structured data');
+      // Process content for tables, structured lists, and text sections
+      if (hasTable || hasStructuredList) {
+        console.log('Structured data detected, processing tables and lists');
         
-        // Split the content by markdown table patterns
-        const sections = content.split(/(?=\|[\s\S]+\|)/g);
+        // First, identify page breaks and split content by pages if possible
+        const pageBreakPattern = /\n-{3,}|={3,}|\n\s*Page\s+\d+\s*\n|\n\s*\[\s*Page\s+\d+\s*\]/gi;
+        let pageChunks = content.split(pageBreakPattern);
         
-        for (const section of sections) {
-          if (section.trim().startsWith('|') && section.includes('|')) {
-            // This looks like a table, try to parse it
+        // If we couldn't detect page breaks or only have one chunk, try a different approach
+        if (pageChunks.length === 1) {
+          // Use regular expressions to identify potential section breaks
+          const sectionBreakPattern = /\n\s*#{1,3}\s+|\n\s*\*{3,}\s*\n|\n\s*={3,}\s*\n|\n\s*-{3,}\s*\n/g;
+          pageChunks = content.split(sectionBreakPattern);
+        }
+        
+        // Process each chunk (page or section)
+        for (const chunk of pageChunks) {
+          if (chunk.trim().length === 0) continue;
+          
+          // Check if the chunk contains a table
+          if (chunk.includes('|') && (chunk.includes('|-') || chunk.includes('|='))) {
+            // This looks like a markdown table, try to parse it
             try {
-              const tableLines = section.split('\n').filter(line => line.trim().length > 0);
-              const headerLine = tableLines[0];
-              const separatorLine = tableLines[1];
-              
-              if (headerLine && separatorLine && separatorLine.includes('|-')) {
-                // Extract headers
-                const headers = headerLine
-                  .split('|')
-                  .filter(cell => cell.trim().length > 0)
-                  .map(cell => cell.trim());
-                
-                // Extract rows
-                const rows = tableLines.slice(2).map(line => 
-                  line.split('|')
-                    .filter(cell => cell.trim().length > 0)
-                    .map(cell => cell.trim())
-                );
-                
-                contentItems.push({
-                  type: "table",
-                  headers,
-                  rows
-                });
-              } else {
-                // Not a properly formatted table, treat as text
-                contentItems.push({
-                  type: "text",
-                  content: section,
-                });
+              // Identify the table section (might be preceded by a title or description)
+              let tableSection = chunk;
+              const tableStart = chunk.indexOf('|');
+              if (tableStart > 0) {
+                // There's content before the table, separate it
+                const preTableContent = chunk.substring(0, tableStart).trim();
+                if (preTableContent.length > 0) {
+                  // Add the content before table as text or heading
+                  if (preTableContent.length < 100 && !preTableContent.includes('\n')) {
+                    contentItems.push({
+                      type: "heading",
+                      content: preTableContent,
+                    });
+                  } else {
+                    contentItems.push({
+                      type: "text",
+                      content: preTableContent,
+                    });
+                  }
+                }
+                tableSection = chunk.substring(tableStart);
               }
-            } catch (tableError) {
-              // If table parsing fails, add as text
+              
+              // Improved table parser that handles various markdown table formats
+              const tableLines = tableSection.split('\n')
+                .filter(line => line.trim().length > 0)
+                .filter(line => line.includes('|'));
+              
+              if (tableLines.length >= 3) { // Need at least header, separator, and one data row
+                // Find the header and separator lines
+                let headerLineIndex = 0;
+                let separatorLineIndex = -1;
+                
+                // Look for the separator line (contains |--)
+                for (let i = 0; i < tableLines.length; i++) {
+                  if (tableLines[i].includes('|-') || tableLines[i].includes('|=')) {
+                    separatorLineIndex = i;
+                    // The header is typically the line before the separator
+                    headerLineIndex = i > 0 ? i - 1 : 0;
+                    break;
+                  }
+                }
+                
+                // If we found a separator line
+                if (separatorLineIndex !== -1) {
+                  // Get the header line
+                  const headerLine = tableLines[headerLineIndex];
+                  
+                  // Extract headers, handling empty first/last cells properly
+                  const headerParts = headerLine.split('|');
+                  const headers = headerParts
+                    .slice(1, headerParts.length - 1) // Remove first/last empty items
+                    .map(cell => cell.trim());
+                    
+                  // Only proceed if we have valid headers
+                  if (headers.length > 0) {
+                    // Extract rows, starting after the separator line
+                    const rows = tableLines.slice(separatorLineIndex + 1)
+                      .map(line => {
+                        const parts = line.split('|');
+                        // Handle empty first/last cells properly
+                        return parts
+                          .slice(1, parts.length - 1)
+                          .map(cell => cell.trim());
+                      })
+                      .filter(row => row.length === headers.length); // Ensure rows match header count
+                    
+                    // Only add the table if we have rows
+                    if (rows.length > 0) {
+                      console.log(`Parsed table with ${headers.length} columns and ${rows.length} rows`);
+                      contentItems.push({
+                        type: "table",
+                        headers,
+                        rows
+                      });
+                      continue; // Skip to next chunk after processing table
+                    }
+                  }
+                }
+              }
+              
+              // If we reach here, table parsing didn't succeed, try ASCII art tables
+              if (asciiTableRegex.test(tableSection)) {
+                console.log('Attempting to parse ASCII art table');
+                try {
+                  // ASCII table parsing logic
+                  const asciiLines = tableSection.split('\n').filter(line => line.trim().length > 0);
+                  
+                  // Locate header row (first row between border rows)
+                  let headerRowIndex = -1;
+                  let dataStartIndex = -1;
+                  
+                  for (let i = 0; i < asciiLines.length; i++) {
+                    if (asciiLines[i].includes('+--') || asciiLines[i].includes('+==')) {
+                      if (headerRowIndex === -1 && i + 1 < asciiLines.length) {
+                        headerRowIndex = i + 1;
+                      } else if (dataStartIndex === -1 && i > headerRowIndex) {
+                        dataStartIndex = i + 1;
+                        break;
+                      }
+                    }
+                  }
+                  
+                  if (headerRowIndex !== -1 && dataStartIndex !== -1) {
+                    // Parse header row
+                    const headerRow = asciiLines[headerRowIndex];
+                    const headers = [];
+                    let currentHeader = '';
+                    let inCell = false;
+                    
+                    for (let i = 0; i < headerRow.length; i++) {
+                      if (headerRow[i] === '|') {
+                        if (inCell) {
+                          headers.push(currentHeader.trim());
+                          currentHeader = '';
+                        }
+                        inCell = !inCell;
+                      } else if (inCell) {
+                        currentHeader += headerRow[i];
+                      }
+                    }
+                    
+                    // Parse data rows
+                    const rows = [];
+                    for (let i = dataStartIndex; i < asciiLines.length; i++) {
+                      if (asciiLines[i].includes('+--') || asciiLines[i].includes('+==')) {
+                        continue; // Skip separator rows
+                      }
+                      
+                      if (asciiLines[i].includes('|')) {
+                        const row = [];
+                        let currentCell = '';
+                        let inCell = false;
+                        
+                        for (let j = 0; j < asciiLines[i].length; j++) {
+                          if (asciiLines[i][j] === '|') {
+                            if (inCell) {
+                              row.push(currentCell.trim());
+                              currentCell = '';
+                            }
+                            inCell = !inCell;
+                          } else if (inCell) {
+                            currentCell += asciiLines[i][j];
+                          }
+                        }
+                        
+                        if (row.length > 0) {
+                          rows.push(row);
+                        }
+                      }
+                    }
+                    
+                    if (headers.length > 0 && rows.length > 0) {
+                      console.log(`Parsed ASCII table with ${headers.length} columns and ${rows.length} rows`);
+                      contentItems.push({
+                        type: "table",
+                        headers,
+                        rows
+                      });
+                      continue; // Skip to next chunk after processing table
+                    }
+                  }
+                } catch (asciiTableError) {
+                  console.warn('ASCII table parsing failed:', asciiTableError);
+                }
+              }
+              
+              // If we get here, neither markdown nor ASCII table parsing succeeded
               contentItems.push({
                 type: "text",
-                content: section,
+                content: chunk.trim(),
+              });
+            } catch (tableError) {
+              console.warn('Table parsing failed:', tableError);
+              contentItems.push({
+                type: "text",
+                content: chunk.trim(),
               });
             }
-          } else if (section.trim().length > 0) {
+          } else if (structuredListRegex.test(chunk)) {
+            // This is a structured list, try to format it properly
+            try {
+              const listLines = chunk.split('\n');
+              let listContent = '';
+              let isInList = false;
+              
+              for (let i = 0; i < listLines.length; i++) {
+                const line = listLines[i].trim();
+                
+                if (/^[a-zA-Z0-9]+[\)\.]\s+|^[-•*]\s+/.test(line)) {
+                  // This is a list item
+                  if (!isInList) {
+                    // Start a new list
+                    listContent += '\n';
+                    isInList = true;
+                  }
+                  // Format list item properly
+                  listContent += line + '\n';
+                } else if (isInList && line.length > 0 && !/^\s*$/.test(line)) {
+                  // This is a continuation of a list item
+                  listContent += '    ' + line + '\n';
+                } else if (line.length > 0) {
+                  // Not part of a list
+                  if (isInList) {
+                    listContent += '\n';
+                    isInList = false;
+                  }
+                  listContent += line + '\n';
+                }
+              }
+              
+              contentItems.push({
+                type: "text",
+                content: listContent.trim(),
+              });
+            } catch (listError) {
+              console.warn('List parsing failed:', listError);
+              contentItems.push({
+                type: "text",
+                content: chunk.trim(),
+              });
+            }
+          } else if (chunk.trim().length > 0) {
             // Regular text content
             contentItems.push({
               type: "text",
-              content: section.trim(),
+              content: chunk.trim(),
             });
           }
         }

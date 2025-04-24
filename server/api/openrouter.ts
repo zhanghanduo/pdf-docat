@@ -86,10 +86,9 @@ export async function processPDF(
         text: promptText,
       },
       {
-        type: 'file',
-        file_url: {
-          mime_type: 'application/pdf',
-          data: pdfBase64,
+        type: 'image_url',
+        image_url: {
+          url: `data:application/pdf;base64,${pdfBase64}`,
         },
       },
     ];
@@ -107,15 +106,8 @@ export async function processPDF(
       }
     }
 
-    // Set up the plugins configuration for the engine
-    const plugins = [
-      {
-        id: 'file-parser',
-        pdf: {
-          engine: engine,
-        },
-      },
-    ];
+    // Set up the plugins configuration for the engine if needed
+    // Not using plugins in this implementation to match the example code
 
     console.log('Sending request to OpenRouter API');
     
@@ -159,9 +151,9 @@ export async function processPDF(
             content: messageContent,
           },
         ],
-        plugins: plugins,
         max_tokens: 4000, // Set a reasonable token limit
-        temperature: 0.1, // Lower temperature for more consistent results
+        temperature: 0.1 // Lower temperature for more consistent results
+        // No plugins used to match example
       },
       {
         headers,

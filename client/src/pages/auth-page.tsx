@@ -95,6 +95,22 @@ const AuthPage: React.FC = () => {
                 <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting ? "Signing in..." : "Sign In"}
                 </Button>
+                
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-gray-600">
+                    Don't have an account?{" "}
+                    <a 
+                      href="/register" 
+                      className="font-medium text-blue-600 hover:text-blue-500"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate("/register");
+                      }}
+                    >
+                      Register now
+                    </a>
+                  </p>
+                </div>
               </form>
             </Form>
           </CardContent>

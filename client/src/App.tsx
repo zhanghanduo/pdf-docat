@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/hooks/use-language";
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/LoginPage";
+import RegisterPage from "@/pages/RegisterPage";
 import AuthPage from "@/pages/auth-page";
 import DashboardPage from "@/pages/DashboardPage";
 import HistoryPage from "@/pages/HistoryPage";
@@ -69,10 +70,25 @@ const AuthRedirect = () => {
   return <AuthPage />;
 };
 
+// Register redirect component
+const RegisterRedirect = () => {
+  const [, setLocation] = useLocation();
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    if (token) {
+      setLocation("/dashboard");
+    }
+  }, [token, setLocation]);
+
+  return <RegisterPage />;
+};
+
 function Router() {
   return (
     <Switch>
       <Route path="/login" component={LoginRedirect} />
+      <Route path="/register" component={RegisterRedirect} />
       <Route path="/auth" component={AuthRedirect} />
       <Route path="/dashboard">
         <ProtectedRoute component={DashboardPage} />

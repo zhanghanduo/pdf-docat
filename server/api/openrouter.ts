@@ -4,9 +4,25 @@ import { EngineType, ExtractedContent } from '@shared/schema';
 const API_KEY = process.env.OPENROUTER_API_KEY || '';
 const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
-// Error handling
+// Get the hostname for http-referer header
+const HOSTNAME = process.env.REPL_SLUG ? `${process.env.REPL_SLUG}.repl.co` : 'localhost:3000';
+
+// Function to validate API key format
+function validateApiKey(key: string): boolean {
+  // Check if the API key is properly formatted
+  // OpenRouter API keys should be non-empty
+  return key.trim().length > 10;
+}
+
+// Log API key status (without revealing the key)
 if (!API_KEY) {
   console.warn('OpenRouter API key is not set. PDF processing will not work.');
+} else if (!validateApiKey(API_KEY)) {
+  console.warn('OpenRouter API key may be malformed. Please check the format.');
+} else {
+  console.log('OpenRouter API key is configured.');
+  // For debugging only, log the first 5 characters
+  console.log(`Key starts with: ${API_KEY.substring(0, 5)}...`);
 }
 
 // Helper to encode file to base64
@@ -99,6 +115,16 @@ export async function processPDF(
 
     console.log('Sending request to OpenRouter API');
     
+    // Try alternative formats for authentication header
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'HTTP-Referer': `https://${HOSTNAME}`,
+      'X-Title': 'DocCat PDF Extractor',
+      'Authorization': `Bearer ${API_KEY.trim()}` // Standard Bearer token format
+    };
+    
+    console.log('Sending request with authorization header');
+    
     // Make the API request to OpenRouter
     const response = await axios.post(
       API_URL,
@@ -115,10 +141,7 @@ export async function processPDF(
         temperature: 0.1, // Lower temperature for more consistent results
       },
       {
-        headers: {
-          Authorization: `Bearer ${API_KEY}`,
-          'Content-Type': 'application/json',
-        },
+        headers,
         timeout: 120000, // 2 minute timeout
       }
     );

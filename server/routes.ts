@@ -348,10 +348,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         
-        return res.status(500).json({
-          message: "Error processing PDF",
-          error: (error instanceof Error) ? error.message : "Unknown error",
-        });
+        // Check for specific error messages related to API key issues
+        const errorMessage = (error instanceof Error) ? error.message : "Unknown error";
+        const isApiKeyError = errorMessage.includes('API key') || 
+                             errorMessage.includes('authentication') || 
+                             errorMessage.includes('auth') || 
+                             errorMessage.includes('401') ||
+                             errorMessage.includes('403');
+        
+        if (isApiKeyError) {
+          return res.status(401).json({
+            message: "Authentication error with OpenRouter API",
+            error: "Invalid or missing API key. Please ensure the OPENROUTER_API_KEY is correctly set.",
+            needsApiKey: true
+          });
+        } else {
+          return res.status(500).json({
+            message: "Error processing PDF",
+            error: errorMessage,
+          });
+        }
       }
     }
   );

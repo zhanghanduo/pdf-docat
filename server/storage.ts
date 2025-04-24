@@ -65,9 +65,13 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
     const now = new Date();
+    // Ensure all required fields are set with defaults if not provided
     const user: User = { 
-      ...insertUser, 
       id,
+      email: insertUser.email,
+      password: insertUser.password,
+      role: insertUser.role || "user", // Default to "user" if not provided
+      isActive: insertUser.isActive ?? true, // Default to true if not provided
       lastActive: now
     };
     this.users.set(id, user);
@@ -88,8 +92,15 @@ export class MemStorage implements IStorage {
     const id = this.currentLogId++;
     const now = new Date();
     const log: ProcessingLog = {
-      ...insertLog,
       id,
+      userId: insertLog.userId,
+      fileName: insertLog.fileName,
+      fileSize: insertLog.fileSize,
+      engine: insertLog.engine,
+      status: insertLog.status,
+      processingTime: insertLog.processingTime || null,
+      extractedContent: insertLog.extractedContent || null,
+      fileAnnotations: insertLog.fileAnnotations || null,
       timestamp: now,
     };
     this.processingLogs.set(id, log);
@@ -99,7 +110,11 @@ export class MemStorage implements IStorage {
   async getProcessingLogsByUserId(userId: number, limit = 10, offset = 0): Promise<ProcessingLog[]> {
     const logs = Array.from(this.processingLogs.values())
       .filter(log => log.userId === userId)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+      .sort((a, b) => {
+        const timeA = a.timestamp ? a.timestamp.getTime() : 0;
+        const timeB = b.timestamp ? b.timestamp.getTime() : 0;
+        return timeB - timeA; // Sort by timestamp descending
+      });
     
     return logs.slice(offset, offset + limit);
   }

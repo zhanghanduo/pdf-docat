@@ -81,13 +81,31 @@ export const pdfApi = {
       formData.append('dualLanguage', String(translationOptions.dualLanguage));
     }
     
-    const response = await api.post<ProcessPDFResponse>('/process-pdf', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    
-    return response.data;
+    try {
+      const response = await api.post<ProcessPDFResponse>('/process-pdf', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      return response.data;
+    } catch (error: any) {
+      // Check for authentication errors (including OpenRouter API key issues)
+      if (error.response?.status === 401 && error.response?.data?.needsApiKey) {
+        throw new Error('OpenRouter API authentication failed. Please contact the administrator to update the API key.');
+      }
+      
+      // Re-throw the error with appropriate message
+      if (error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      } else if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      } else if (error.message) {
+        throw new Error(error.message);
+      } else {
+        throw new Error('An unknown error occurred while processing the PDF');
+      }
+    }
   },
   
   getProcessingLogs: async (page = 1, limit = 10): Promise<ProcessingLogResponse> => {

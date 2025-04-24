@@ -1,18 +1,62 @@
 import React from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { ProcessingStatus } from "@shared/schema";
+import { Button } from "@/components/ui/button";
 
 interface LoadingStateProps {
   status: ProcessingStatus;
   progress: number;
   engine: string;
+  errorMessage?: string;
+  onRetry?: () => void;
 }
 
 export const LoadingState: React.FC<LoadingStateProps> = ({
   status,
   progress,
   engine,
+  errorMessage,
+  onRetry,
 }) => {
+  if (status === "error") {
+    const isApiKeyError = errorMessage && (
+      errorMessage.toLowerCase().includes("api key") || 
+      errorMessage.toLowerCase().includes("authentication") ||
+      errorMessage.toLowerCase().includes("openrouter")
+    );
+
+    return (
+      <div className="text-center py-8 max-w-xl mx-auto">
+        <AlertCircle className="mx-auto h-10 w-10 text-red-500" />
+        <h3 className="mt-4 text-lg font-medium text-gray-900">
+          Processing Error
+        </h3>
+        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-sm text-red-700">
+            {isApiKeyError ? (
+              <>
+                <strong>API Authentication Error:</strong> The system cannot connect to the OpenRouter AI service. 
+                <br /><br />
+                This is likely due to an invalid or expired API key. Please contact the administrator to update the API key.
+              </>
+            ) : (
+              errorMessage || "An unknown error occurred while processing your document."
+            )}
+          </p>
+        </div>
+        
+        {onRetry && (
+          <Button 
+            onClick={onRetry} 
+            className="mt-4 bg-primary hover:bg-primary/90"
+          >
+            Try Again
+          </Button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="text-center py-8">
       <Loader2 className="animate-spin mx-auto h-10 w-10 text-primary" />

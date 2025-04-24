@@ -26,6 +26,7 @@ const DashboardPage: React.FC = () => {
   const [translationEnabled, setTranslationEnabled] = useState<boolean>(true);
   const [targetLanguage, setTargetLanguage] = useState<TargetLanguage>("simplified-chinese");
   const [dualLanguage, setDualLanguage] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
   const { toast } = useToast();
 
   const handleFileSelected = useCallback((file: File) => {
@@ -69,6 +70,9 @@ const DashboardPage: React.FC = () => {
     try {
       if (!selectedFile) return;
       
+      // Reset error message
+      setErrorMessage(undefined);
+      
       // Prepare translation options
       const translationOpts = {
         enabled: translationEnabled,
@@ -92,11 +96,15 @@ const DashboardPage: React.FC = () => {
         description: "Your PDF has been successfully processed",
       });
     } catch (error: any) {
+      // Store the error message for display in the LoadingState component
+      const errorMsg = error.message || "An unknown error occurred while processing the PDF";
+      setErrorMessage(errorMsg);
       setProcessingStatus("error");
       
+      // Show toast notification for the error
       toast({
         title: "Processing failed",
-        description: error.message || "An error occurred while processing the PDF",
+        description: errorMsg,
         variant: "destructive",
       });
     }
@@ -108,6 +116,7 @@ const DashboardPage: React.FC = () => {
     setLoadingProgress(0);
     setExtractedContent(null);
     setFileAnnotations(null);
+    setErrorMessage(undefined);
   }, []);
 
   return (
@@ -173,11 +182,13 @@ const DashboardPage: React.FC = () => {
               </>
             )}
 
-            {(processingStatus === "uploading" || processingStatus === "processing") && (
+            {(processingStatus === "uploading" || processingStatus === "processing" || processingStatus === "error") && (
               <LoadingState
                 status={processingStatus}
                 progress={loadingProgress}
                 engine={processingEngine}
+                errorMessage={errorMessage}
+                onRetry={resetProcessing}
               />
             )}
           </CardContent>

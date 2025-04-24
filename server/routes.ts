@@ -278,77 +278,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const pdfBase64 = req.file.buffer.toString("base64");
         console.log("File converted to base64");
         
-        try {
-          // Process the PDF with OpenRouter
-          console.log(`Calling OpenRouter API with engine: ${engine}`);
-          const { extractedContent, fileAnnotations: newFileAnnotations } = await processPDF(
-            pdfBase64,
-            req.file.originalname,
-            engine,
-            fileAnnotations,
-            {
-              translateEnabled,
-              targetLanguage,
-              dualLanguage
-            }
-          );
-          
-          // Calculate processing time
-          const processingTime = Date.now() - startTime;
-          console.log(`PDF processed successfully in ${processingTime}ms`);
-          
-          // Create processing log
-          const log = await storage.createProcessingLog({
-            userId: req.user!.id,
-            fileName: req.file.originalname,
-            fileSize: req.file.size,
-            engine: engine,
-            status: "completed",
-            processingTime: processingTime,
-            extractedContent,
-            fileAnnotations: newFileAnnotations ? JSON.parse(newFileAnnotations) : null,
-          });
-          
-          // Log PDF processing
-          logUserAction(req.user!.id, "Processed PDF", {
-            fileName: req.file.originalname,
-            fileSize: req.file.size,
-            engine,
-          });
-          
-          // Return the extracted content and file annotations
-          return res.status(200).json({
-            extractedContent,
-            fileAnnotations: newFileAnnotations,
-            logId: log.id,
-          });
-        } catch (error) {
-          throw error; // Rethrow to be caught by the outer try-catch
-        }
+        // Process the PDF with OpenRouter
+        console.log(`Calling OpenRouter API with engine: ${engine}`);
+        const { extractedContent, fileAnnotations: newFileAnnotations } = await processPDF(
+          pdfBase64,
+          req.file.originalname,
+          engine,
+          fileAnnotations,
+          {
+            translateEnabled,
+            targetLanguage,
+            dualLanguage
+          }
+        );
         
-        // This code is unreachable because we either returned in the try block
-        // or we rethrew the error to be caught by the outer catch block
+        // Calculate processing time
+        const processingTime = Date.now() - startTime;
+        console.log(`PDF processed successfully in ${processingTime}ms`);
+        
+        // Create processing log
+        const log = await storage.createProcessingLog({
+          userId: req.user!.id,
+          fileName: req.file.originalname,
+          fileSize: req.file.size,
+          engine: engine,
+          status: "completed",
+          processingTime: processingTime,
+          extractedContent,
+          fileAnnotations: newFileAnnotations ? JSON.parse(newFileAnnotations) : null,
+        });
+        
+        // Log PDF processing
+        logUserAction(req.user!.id, "Processed PDF", {
+          fileName: req.file.originalname,
+          fileSize: req.file.size,
+          engine,
+        });
+        
+        // Return the extracted content and file annotations
+        return res.status(200).json({
+          extractedContent,
+          fileAnnotations: newFileAnnotations,
+          logId: log.id,
+        });
       } catch (error) {
         console.error("Error processing PDF:", error);
         
         // Create error log if possible
         if (req.file && req.user) {
-          await storage.createProcessingLog({
-            userId: req.user.id,
-            fileName: req.file.originalname,
-            fileSize: req.file.size,
-            engine: req.body.engine || "mistral-ocr",
-            status: "error",
-            processingTime: null,
-            extractedContent: null,
-            fileAnnotations: null,
-          });
-          
-          // Log error
-          logUserAction(req.user.id, "PDF processing error", {
-            fileName: req.file.originalname,
-            error: (error instanceof Error) ? error.message : "Unknown error",
-          });
+          try {
+            await storage.createProcessingLog({
+              userId: req.user.id,
+              fileName: req.file.originalname,
+              fileSize: req.file.size,
+              engine: req.body.engine || "mistral-ocr",
+              status: "error",
+              processingTime: null,
+              extractedContent: null,
+              fileAnnotations: null,
+            });
+            
+            // Log error
+            logUserAction(req.user.id, "PDF processing error", {
+              fileName: req.file.originalname,
+              error: (error instanceof Error) ? error.message : "Unknown error",
+            });
+          } catch (logError) {
+            console.error("Error creating log for PDF processing error:", logError);
+          }
         }
         
         return res.status(500).json({

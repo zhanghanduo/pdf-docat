@@ -106,10 +106,20 @@ const DashboardPage: React.FC = () => {
       setFileAnnotations(response.fileAnnotations);
       setProcessingStatus("completed");
       
-      toast({
-        title: "Processing complete",
-        description: `Your PDF has been successfully processed in ${(totalProcessingTime / 1000).toFixed(1)} seconds`,
-      });
+      // Check if this was a cached response
+      if (response.cached) {
+        toast({
+          title: "Duplicate Document Detected",
+          description: `This file was previously processed. Using cached results (completed in ${(totalProcessingTime / 1000).toFixed(1)} seconds)`,
+          variant: "default",
+          className: "bg-blue-50 border-blue-200",
+        });
+      } else {
+        toast({
+          title: "Processing complete",
+          description: `Your PDF has been successfully processed in ${(totalProcessingTime / 1000).toFixed(1)} seconds`,
+        });
+      }
     } catch (error: any) {
       // Store the error message for display in the LoadingState component
       const errorMsg = error.message || "An unknown error occurred while processing the PDF";

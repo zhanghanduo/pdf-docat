@@ -38,6 +38,7 @@ export interface ProcessPDFResponse {
   extractedContent: ExtractedContent;
   fileAnnotations: string;
   logId: number;
+  cached?: boolean;
 }
 
 export interface ProcessingLogResponse {

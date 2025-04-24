@@ -22,7 +22,7 @@ export const ExtractedContentNew: React.FC<ExtractedContentProps> = ({
   onProcessAnother,
   processingTime = 0,
 }) => {
-  const [viewMode, setViewMode] = useState<"rendered" | "markdown">("rendered");
+  const [viewMode, setViewMode] = useState<"rendered" | "markdown">("markdown");
   
   const handleExportText = () => {
     exportAsText(content, fileName);
@@ -82,10 +82,10 @@ export const ExtractedContentNew: React.FC<ExtractedContentProps> = ({
               <h4 className="text-xl font-semibold">{content.title}</h4>
               
               <div className="flex items-center space-x-2">
-                <Tabs defaultValue="rendered" onValueChange={(v) => setViewMode(v as "rendered" | "markdown")}>
+                <Tabs defaultValue="markdown" onValueChange={(v) => setViewMode(v as "rendered" | "markdown")}>
                   <TabsList>
-                    <TabsTrigger value="rendered">Rendered</TabsTrigger>
-                    <TabsTrigger value="markdown">Markdown</TabsTrigger>
+                    <TabsTrigger value="markdown">Enhanced View</TabsTrigger>
+                    <TabsTrigger value="rendered">Classic View</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>

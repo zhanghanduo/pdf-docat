@@ -111,6 +111,18 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
       <p className="mt-1 text-sm text-gray-500">
         This may take a few moments depending on the size and complexity of your document.
       </p>
+      {status === "processing" && (
+        <div className="mt-4 py-2 px-3 bg-blue-50 inline-block rounded-md">
+          <p className="text-xs text-blue-700 font-medium">
+            Engine Details<br/>
+            <span className="font-normal">
+              Model: {engine === "mistral-ocr" ? "Mistral-Medium" : engine === "pdf-text" ? "Claude-3-Sonnet" : engine}
+              <br/>
+              Provider: {engine === "mistral-ocr" ? "Mistral.ai via OpenRouter" : "Anthropic via OpenRouter"}
+            </span>
+          </p>
+        </div>
+      )}
     </div>
   );
 };

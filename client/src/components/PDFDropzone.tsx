@@ -3,6 +3,7 @@ import { UploadCloud, File } from "lucide-react";
 import { cn, isPdfFile } from "@/lib/utils";
 import { PDFViewer } from "@/components/ui/pdf-viewer";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/hooks/use-language";
 
 interface PDFDropzoneProps {
   onFileSelected: (file: File) => void;
@@ -18,14 +19,15 @@ export const PDFDropzone: React.FC<PDFDropzoneProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const validateFile = useCallback(
     (file: File): boolean => {
       // Check if file is a PDF
       if (!isPdfFile(file)) {
         toast({
-          title: "Invalid file type",
-          description: "Please upload a PDF file.",
+          title: t('invalid_file_type'),
+          description: t('please_upload_pdf'),
           variant: "destructive",
         });
         return false;
@@ -34,8 +36,8 @@ export const PDFDropzone: React.FC<PDFDropzoneProps> = ({
       // Check file size
       if (file.size > maxSize) {
         toast({
-          title: "File too large",
-          description: `The file exceeds the maximum size of ${Math.round(maxSize / (1024 * 1024))}MB.`,
+          title: t('file_too_large'),
+          description: t('file_size_exceeds', String(Math.round(maxSize / (1024 * 1024)))),
           variant: "destructive",
         });
         return false;
@@ -123,11 +125,11 @@ export const PDFDropzone: React.FC<PDFDropzoneProps> = ({
             </div>
             
             <h3 className="text-xl font-medium text-foreground">
-              Upload your PDF document
+              {t('upload_pdf_document')}
             </h3>
             
             <p className="text-muted-foreground">
-              Drag and drop your file here, or click to browse your files
+              {t('drag_drop_browse')}
             </p>
             
             <div className="pt-4">
@@ -136,7 +138,7 @@ export const PDFDropzone: React.FC<PDFDropzoneProps> = ({
                 className="relative cursor-pointer inline-flex items-center justify-center rounded-lg px-6 py-3 font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors focus-within:outline-none"
               >
                 <File className="mr-2 h-5 w-5" />
-                <span>Select PDF file</span>
+                <span>{t('select_pdf_file')}</span>
                 <input
                   id="file-upload"
                   name="file-upload"
@@ -149,7 +151,7 @@ export const PDFDropzone: React.FC<PDFDropzoneProps> = ({
             </div>
             
             <p className="text-sm text-muted-foreground pt-2">
-              PDF files up to {Math.round(maxSize / (1024 * 1024))}MB supported
+              {t('pdf_file_size_limit', String(Math.round(maxSize / (1024 * 1024))))}
             </p>
           </div>
         </div>

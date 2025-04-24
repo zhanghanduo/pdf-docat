@@ -5,7 +5,7 @@ type Language = 'zh-CN' | 'en';
 interface LanguageContextType {
   language: Language;
   setLanguage: (language: Language) => void;
-  t: (key: string) => string;
+  t: (key: string, param?: string) => string;
 }
 
 const defaultLanguage: Language = 'zh-CN';
@@ -79,6 +79,16 @@ const translations: Record<string, Record<string, string>> = {
     'spanish': 'Spanish',
     'french': 'French',
     
+    // PDF Dropzone
+    'upload_pdf_document': 'Upload your PDF document',
+    'drag_drop_browse': 'Drag and drop your file here, or click to browse your files',
+    'select_pdf_file': 'Select PDF file',
+    'pdf_file_size_limit': 'PDF files up to {0}MB supported',
+    'invalid_file_type': 'Invalid file type',
+    'please_upload_pdf': 'Please upload a PDF file.',
+    'file_too_large': 'File too large',
+    'file_size_exceeds': 'The file exceeds the maximum size of {0}MB.',
+    
     // Misc
     'no_file': 'No file selected',
     'please_upload': 'Please upload a PDF file to process',
@@ -86,7 +96,7 @@ const translations: Record<string, Record<string, string>> = {
     'logout': 'Logout',
     'logged_out': 'Logged out successfully',
     'logout_message': 'You have been logged out of your account',
-    'switch_language': 'Language'
+    'switch_language': '语言'
   },
   'zh-CN': {
     // Navigation
@@ -191,10 +201,10 @@ export const LanguageProvider: React.FC<{children: ReactNode}> = ({ children }) 
   };
 
   // Translation function
-  const t = (key: string, ...args: string[]): string => {
+  const t = (key: string, param?: string): string => {
     const translation = translations[language]?.[key] || key;
-    if (args.length > 0) {
-      return formatString(translation, ...args);
+    if (param) {
+      return formatString(translation, param);
     }
     return translation;
   };

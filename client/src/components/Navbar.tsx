@@ -1,9 +1,16 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, LogOut, FileText, History, Settings, Cat } from "lucide-react";
+import { Menu, X, LogOut, FileText, History, Settings, Cat, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLanguage } from "@/hooks/use-language";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface NavbarProps {
   onLogout?: () => void;
@@ -14,6 +21,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { language, setLanguage, t } = useLanguage();
 
   // Get user data from local storage
   const userDataString = localStorage.getItem("user");
@@ -86,6 +94,30 @@ export const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
           <div className="flex items-center">
             <div className="ml-3 relative">
               <div className="flex items-center">
+                {/* Language selector */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="mr-2">
+                      <Globe className="h-5 w-5" />
+                      <span className="ml-1 text-sm">{t('switch_language')}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem 
+                      onClick={() => setLanguage('zh-CN')}
+                      className={language === 'zh-CN' ? 'bg-primary-50 text-primary' : ''}
+                    >
+                      简体中文
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => setLanguage('en')}
+                      className={language === 'en' ? 'bg-primary-50 text-primary' : ''}
+                    >
+                      English
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
                 <span className="text-sm font-medium text-gray-700 mr-2">
                   {userData?.email}
                 </span>

@@ -3,6 +3,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TargetLanguage, targetLanguages } from "@shared/schema";
+import { useLanguage } from "@/hooks/use-language";
 
 interface TranslationOptionsProps {
   enabled: boolean;
@@ -23,30 +24,32 @@ export const TranslationOptions: React.FC<TranslationOptionsProps> = ({
   onDualLanguageChange,
   disabled = false,
 }) => {
-  // Map of language codes to readable names
-  const languageNames: Record<TargetLanguage, string> = {
-    "english": "English",
-    "simplified-chinese": "Simplified Chinese",
-    "traditional-chinese": "Traditional Chinese",
-    "german": "German",
-    "japanese": "Japanese",
-    "spanish": "Spanish",
-    "french": "French",
+  const { t } = useLanguage();
+  
+  // Map of language codes to translation keys
+  const languageKeys: Record<TargetLanguage, string> = {
+    "english": "english",
+    "simplified-chinese": "simplified_chinese",
+    "traditional-chinese": "traditional_chinese",
+    "german": "german",
+    "japanese": "japanese",
+    "spanish": "spanish",
+    "french": "french",
   };
 
   return (
     <div className="mt-6 border-t pt-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h4 className="text-sm font-medium text-gray-900">Translation Options</h4>
-          <p className="text-xs text-gray-500">Translate extracted content to your preferred language</p>
+          <h4 className="text-sm font-medium text-gray-900">{t('translation_options')}</h4>
+          <p className="text-xs text-gray-500">{t('enable_translation')}</p>
         </div>
       </div>
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <Label htmlFor="translation-toggle" className="text-sm text-gray-700">
-            Enable Translation
+            {t('enable_translation')}
           </Label>
           <Switch
             id="translation-toggle"
@@ -60,7 +63,7 @@ export const TranslationOptions: React.FC<TranslationOptionsProps> = ({
           <>
             <div className="space-y-1.5">
               <Label htmlFor="target-language" className="text-sm text-gray-700">
-                Target Language
+                {t('target_language_label')}
               </Label>
               <Select
                 disabled={disabled}
@@ -68,12 +71,12 @@ export const TranslationOptions: React.FC<TranslationOptionsProps> = ({
                 onValueChange={(value) => onTargetLanguageChange(value as TargetLanguage)}
               >
                 <SelectTrigger id="target-language" className="w-full">
-                  <SelectValue placeholder="Select language" />
+                  <SelectValue placeholder={t('target_language_label')} />
                 </SelectTrigger>
                 <SelectContent>
                   {targetLanguages.map((lang) => (
                     <SelectItem key={lang} value={lang}>
-                      {languageNames[lang]}
+                      {t(languageKeys[lang])}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -82,7 +85,7 @@ export const TranslationOptions: React.FC<TranslationOptionsProps> = ({
 
             <div className="flex items-center justify-between">
               <Label htmlFor="dual-language-toggle" className="text-sm text-gray-700">
-                Dual Language (Show Original Text)
+                {t('dual_language')}
               </Label>
               <Switch
                 id="dual-language-toggle"

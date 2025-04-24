@@ -5,24 +5,25 @@ const API_KEY = process.env.OPENROUTER_API_KEY || '';
 const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 // Get the hostname for http-referer header
-const HOSTNAME = process.env.REPL_SLUG ? `${process.env.REPL_SLUG}.repl.co` : 'localhost:3000';
+const HOSTNAME = process.env.REPL_SLUG ? `${process.env.REPL_SLUG}.replit.dev` : 'localhost:3000';
+console.log(`HTTP Referer will be set to: https://${HOSTNAME}`);
 
 // Function to validate API key format
 function validateApiKey(key: string): boolean {
-  // Check if the API key is properly formatted
-  // OpenRouter API keys should be non-empty
-  return key.trim().length > 10;
+  // OpenRouter API keys typically start with "sk-or-v1-" and should be non-empty
+  return key.trim().length > 20 && key.startsWith('sk-or-');
 }
 
 // Log API key status (without revealing the key)
 if (!API_KEY) {
   console.warn('OpenRouter API key is not set. PDF processing will not work.');
 } else if (!validateApiKey(API_KEY)) {
-  console.warn('OpenRouter API key may be malformed. Please check the format.');
+  console.warn('OpenRouter API key may be malformed. It should start with "sk-or-". Please check the format.');
+  console.log(`Current key starts with: ${API_KEY.substring(0, 5)}... (length: ${API_KEY.length} chars)`);
 } else {
-  console.log('OpenRouter API key is configured.');
+  console.log('OpenRouter API key is properly configured.');
   // For debugging only, log the first 5 characters
-  console.log(`Key starts with: ${API_KEY.substring(0, 5)}...`);
+  console.log(`Key starts with: ${API_KEY.substring(0, 5)}... (length: ${API_KEY.length} chars)`);
 }
 
 // Helper to encode file to base64
@@ -52,6 +53,9 @@ export async function processPDF(
     if (!API_KEY) {
       throw new Error('OpenRouter API key is not configured.');
     }
+    
+    console.log(`API Key format validation: ${API_KEY.startsWith('sk-or-') ? 'Looks valid' : 'Invalid format'}`);
+    console.log(`API Key length: ${API_KEY.length} characters`);
     
     // Check PDF size
     const estimatedSize = pdfBase64.length * 0.75; // Rough estimate of base64 to raw size
@@ -115,17 +119,32 @@ export async function processPDF(
 
     console.log('Sending request to OpenRouter API');
     
-    // Try alternative formats for authentication header
+    // Set up proper headers for OpenRouter
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'HTTP-Referer': `https://${HOSTNAME}`,
-      'X-Title': 'DocCat PDF Extractor',
-      'Authorization': `Bearer ${API_KEY.trim()}` // Standard Bearer token format
+      'X-Title': 'DocCat PDF Extractor'
     };
+    
+    // Add API key as a Bearer token (standard format for OpenRouter)
+    if (API_KEY) {
+      // OpenRouter requires "Bearer " prefix for the Authorization header
+      headers['Authorization'] = `Bearer ${API_KEY.trim()}`;
+      
+      // Log the first few characters of the key for debugging (do not log the entire key)
+      console.log(`Authorization header set with Bearer token, key starts with: ${API_KEY.substring(0, 5)}...`);
+    } else {
+      console.error('No API key provided for OpenRouter');
+    }
     
     console.log('Sending request with authorization header');
     
     // Make the API request to OpenRouter
+    console.log('API request details:');
+    console.log(`- Endpoint: ${API_URL}`);
+    console.log(`- Model: anthropic/claude-3-sonnet:poe`);
+    console.log(`- Timeout: 120 seconds`);
+    
     const response = await axios.post(
       API_URL,
       {

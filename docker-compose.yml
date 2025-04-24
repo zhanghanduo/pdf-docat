@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${PGUSER}:${PGPASSWORD}@db:${PGPORT}/${PGDATABASE}
+      - PGHOST=db
+      - PGUSER=${PGUSER:-postgres}
+      - PGPASSWORD=${PGPASSWORD:-postgres}
+      - PGDATABASE=${PGDATABASE:-doccat}
+      - PGPORT=${PGPORT:-5432}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - JWT_SECRET=${JWT_SECRET:-changeThisSecretInProduction}
+      - RATE_LIMIT_GENERAL=${RATE_LIMIT_GENERAL:-100}
+      - RATE_LIMIT_PDF_PROCESSING=${RATE_LIMIT_PDF_PROCESSING:-10}
+      - RATE_LIMIT_DAILY=${RATE_LIMIT_DAILY:-20}
+    depends_on:
+      - db
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - doccat-network
+
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=${PGUSER:-postgres}
+      - POSTGRES_PASSWORD=${PGPASSWORD:-postgres}
+      - POSTGRES_DB=${PGDATABASE:-doccat}
+    ports:
+      - "${PGPORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - doccat-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+
+networks:
+  doccat-network:
+    driver: bridge

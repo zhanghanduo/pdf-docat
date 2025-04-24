@@ -71,14 +71,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
                 className={`nav-item ${location === "/dashboard" ? "active" : ""}`}
               >
                 <FileText className="w-4 h-4" />
-                Dashboard
+                {t('dashboard')}
               </button>
               <button 
                 onClick={() => setLocation("/history")} 
                 className={`nav-item ${location === "/history" ? "active" : ""}`}
               >
                 <History className="w-4 h-4" />
-                History
+                {t('history')}
               </button>
               {isAdmin && (
                 <button 
@@ -86,7 +86,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
                   className={`nav-item ${location === "/settings" ? "active" : ""}`}
                 >
                   <Settings className="w-4 h-4" />
-                  Settings
+                  {t('settings')}
                 </button>
               )}
             </div>
@@ -150,7 +150,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
                 setShowMobileMenu(false);
               }}
             >
-              Dashboard
+              {t('dashboard')}
             </button>
             <button
               className={`block w-full text-left pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
@@ -163,7 +163,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
                 setShowMobileMenu(false);
               }}
             >
-              History
+              {t('history')}
             </button>
             {isAdmin && (
               <button
@@ -177,7 +177,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
                   setShowMobileMenu(false);
                 }}
               >
-                Settings
+                {t('settings')}
               </button>
             )}
           </div>

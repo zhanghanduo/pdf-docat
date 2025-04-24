@@ -9,6 +9,7 @@ interface LoadingStateProps {
   engine: string;
   errorMessage?: string;
   onRetry?: () => void;
+  retryCount?: number;
 }
 
 export const LoadingState: React.FC<LoadingStateProps> = ({
@@ -17,6 +18,7 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   engine,
   errorMessage,
   onRetry,
+  retryCount = 0,
 }) => {
   if (status === "error") {
     const isApiKeyError = errorMessage && (
@@ -38,9 +40,37 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
                 <strong>API Authentication Error:</strong> The system cannot connect to the OpenRouter AI service. 
                 <br /><br />
                 This is likely due to an invalid or expired API key. Please contact the administrator to update the API key.
+                {retryCount > 1 && (
+                  <>
+                    <br /><br />
+                    <strong>Error Details:</strong> There might be a specific issue with the JWT format in the authentication header. 
+                    The API requires a valid OpenRouter API key with the "Bearer " prefix.
+                  </>
+                )}
+                {retryCount > 2 && (
+                  <>
+                    <br /><br />
+                    <strong>Troubleshooting Suggestions:</strong>
+                    <ul className="list-disc list-inside mt-2">
+                      <li>Verify the API key format (should begin with "sk-or-")</li>
+                      <li>Check if the API key has proper permissions</li>
+                      <li>Ensure no extra spaces or characters in the API key</li>
+                      <li>Contact OpenRouter support if the problem persists</li>
+                    </ul>
+                  </>
+                )}
               </>
             ) : (
-              errorMessage || "An unknown error occurred while processing your document."
+              <>
+                {errorMessage || "An unknown error occurred while processing your document."}
+                {retryCount > 1 && (
+                  <>
+                    <br /><br />
+                    <strong>Troubleshooting:</strong> If this error persists after multiple attempts, 
+                    it might be related to the document size or server limitations.
+                  </>
+                )}
+              </>
             )}
           </p>
         </div>
@@ -49,8 +79,9 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
           <Button 
             onClick={onRetry} 
             className="mt-4 bg-primary hover:bg-primary/90"
+            disabled={retryCount > 3}
           >
-            Try Again
+            {retryCount > 3 ? "Too Many Attempts" : "Try Again"}
           </Button>
         )}
       </div>

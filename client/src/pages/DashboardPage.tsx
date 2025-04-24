@@ -27,6 +27,7 @@ const DashboardPage: React.FC = () => {
   const [targetLanguage, setTargetLanguage] = useState<TargetLanguage>("simplified-chinese");
   const [dualLanguage, setDualLanguage] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
+  const [retryCount, setRetryCount] = useState<number>(0);
   const { toast } = useToast();
 
   const handleFileSelected = useCallback((file: File) => {
@@ -70,7 +71,12 @@ const DashboardPage: React.FC = () => {
     try {
       if (!selectedFile) return;
       
-      // Reset error message
+      // Reset error message but increment retry count if there was an error before
+      if (processingStatus === "error") {
+        setRetryCount(prevCount => prevCount + 1);
+      } else {
+        setRetryCount(0);
+      }
       setErrorMessage(undefined);
       
       // Prepare translation options
@@ -117,6 +123,7 @@ const DashboardPage: React.FC = () => {
     setExtractedContent(null);
     setFileAnnotations(null);
     setErrorMessage(undefined);
+    setRetryCount(0); // Reset retry count when starting over
   }, []);
 
   return (
@@ -188,7 +195,8 @@ const DashboardPage: React.FC = () => {
                 progress={loadingProgress}
                 engine={processingEngine}
                 errorMessage={errorMessage}
-                onRetry={resetProcessing}
+                onRetry={processFile}
+                retryCount={retryCount}
               />
             )}
           </CardContent>

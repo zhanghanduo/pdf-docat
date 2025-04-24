@@ -6,6 +6,8 @@ import { exportAsText, exportAsJson, exportAsMarkdown, formatExtractedContentAsM
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { Clock, FileText, AlertTriangle, InfoIcon, HelpCircle } from "lucide-react";
 
 interface ExtractedContentProps {
   content: ExtractedContentType;
@@ -62,168 +64,223 @@ export const ExtractedContent: React.FC<ExtractedContentProps> = ({
       </CardHeader>
 
       <CardContent>
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <h4 className="text-xl font-semibold">{content.title}</h4>
-            <p className="text-sm text-gray-500">
-              {content.pages} pages • Extraction time: {content.metadata.extractionTime} • Word
-              count: {content.metadata.wordCount} • Confidence:{" "}
-              {(content.metadata.confidence * 100).toFixed(1)}%
-              {content.metadata.targetLanguage && ` • Translation: ${content.metadata.targetLanguage}`}
-            </p>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Tabs defaultValue="rendered" onValueChange={(v) => setViewMode(v as "rendered" | "markdown")}>
-              <TabsList>
-                <TabsTrigger value="rendered">Rendered</TabsTrigger>
-                <TabsTrigger value="markdown">Markdown</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        </div>
-
-        {viewMode === "rendered" ? (
-          <div className="mt-6 prose prose-sm max-w-none">
-            {content.content.map((item, index) => (
-              <div key={index} className="mb-4">
-                {/* Text content */}
-                {item.type === "text" && (
-                  <div className={isTranslated ? "grid grid-cols-1 md:grid-cols-2 gap-4" : ""}>
-                    <div>
-                      <p className="text-gray-900">{item.content}</p>
-                    </div>
-                    
-                    {item.translatedContent && (
-                      <div className="bg-gray-50 p-3 rounded border-l-4 border-blue-500">
-                        <p className="text-gray-900">{item.translatedContent}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Heading content */}
-                {item.type === "heading" && (
-                  <div>
-                    <h3 className="text-lg font-semibold mt-6 mb-2">{item.content}</h3>
-                    {item.translatedContent && (
-                      <h4 className="text-md font-medium mt-1 mb-2 text-blue-600">
-                        {item.translatedContent}
-                      </h4>
-                    )}
-                  </div>
-                )}
-
-                {/* Code content */}
-                {item.type === "code" && (
-                  <div className={isTranslated ? "grid grid-cols-1 md:grid-cols-2 gap-4" : ""}>
-                    <div className="bg-gray-800 text-gray-100 p-3 rounded-md overflow-x-auto">
-                      <pre className="text-xs">{item.content}</pre>
-                    </div>
-                    
-                    {item.translatedContent && (
-                      <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
-                        <p className="text-sm text-gray-800">{item.translatedContent}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Table content */}
-                {item.type === "table" && (
-                  <div className={isTranslated && item.translatedHeaders && item.translatedRows 
-                    ? "grid grid-cols-1 gap-6 mt-4" 
-                    : ""}>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            {item.headers?.map((header, headerIndex) => (
-                              <th
-                                key={headerIndex}
-                                scope="col"
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                              >
-                                {header}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {item.rows?.map((row, rowIndex) => (
-                            <tr
-                              key={rowIndex}
-                              className={rowIndex % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                            >
-                              {row.map((cell, cellIndex) => (
-                                <td
-                                  key={cellIndex}
-                                  className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                                >
-                                  {cell}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    
-                    {item.translatedHeaders && item.translatedRows && (
-                      <div className="overflow-x-auto mt-4">
-                        <h4 className="text-md font-medium mb-2 text-blue-600">Translated Table</h4>
-                        <table className="min-w-full divide-y divide-blue-100 border border-blue-200">
-                          <thead className="bg-blue-50">
-                            <tr>
-                              {item.translatedHeaders?.map((header, headerIndex) => (
-                                <th
-                                  key={headerIndex}
-                                  scope="col"
-                                  className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider"
-                                >
-                                  {header}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-blue-100">
-                            {item.translatedRows?.map((row, rowIndex) => (
-                              <tr
-                                key={rowIndex}
-                                className={rowIndex % 2 === 0 ? "bg-white" : "bg-blue-50"}
-                              >
-                                {row.map((cell, cellIndex) => (
-                                  <td
-                                    key={cellIndex}
-                                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-700"
-                                  >
-                                    {cell}
-                                  </td>
-                                ))}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                )}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Left sidebar with document information */}
+          <div className="md:col-span-1 bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <h4 className="text-md font-semibold flex items-center gap-2 mb-4">
+              <InfoIcon size={16} className="text-gray-500" />
+              Document Information
+            </h4>
+            
+            <div className="space-y-4">
+              <div>
+                <h5 className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                  <FileText size={14} />
+                  File Details
+                </h5>
+                <p className="text-sm text-gray-600 mt-1">
+                  {fileName}<br />
+                  Pages: {content.pages}
+                </p>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="mt-6 bg-gray-50 p-4 rounded-md border border-gray-200">
-            <div className="prose max-w-none">
-              <div dangerouslySetInnerHTML={{ 
-                __html: formatExtractedContentAsMarkdown(content)
-                  .replace(/\n/g, '<br/>')
-                  .replace(/#{3,} (.*)/g, '<h3>$1</h3>')
-                  .replace(/#{2} (.*)/g, '<h2>$1</h2>')
-                  .replace(/#{1} (.*)/g, '<h1>$1</h1>')
-              }} />
+              
+              <div>
+                <h5 className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                  <Clock size={14} />
+                  Processing Details
+                </h5>
+                <p className="text-sm text-gray-600 mt-1">
+                  Extraction time: {content.metadata.extractionTime}<br />
+                  Word count: {content.metadata.wordCount}<br />
+                  Confidence: {(content.metadata.confidence * 100).toFixed(1)}%
+                </p>
+              </div>
+              
+              {content.metadata.isTranslated && (
+                <div>
+                  <h5 className="text-sm font-medium text-gray-700">Translation</h5>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Source: {content.metadata.sourceLanguage || "Auto-detected"}<br />
+                    Target: {content.metadata.targetLanguage}
+                  </p>
+                </div>
+              )}
+              
+              {/* Error or warning log display (if any) */}
+              {content.content.some(item => item.content?.includes("很抱歉") || item.content?.includes("error")) && (
+                <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                  <h5 className="text-sm font-medium text-amber-800 flex items-center gap-1">
+                    <AlertTriangle size={14} className="text-amber-500" />
+                    Processing Note
+                  </h5>
+                  <p className="text-sm text-amber-700 mt-1">
+                    The extraction encountered some issues. Please check the content or try uploading again.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
-        )}
+          
+          {/* Right content area */}
+          <div className="md:col-span-3">
+            <div className="flex justify-between items-start mb-4">
+              <h4 className="text-xl font-semibold">{content.title}</h4>
+              
+              <div className="flex items-center space-x-2">
+                <Tabs defaultValue="rendered" onValueChange={(v) => setViewMode(v as "rendered" | "markdown")}>
+                  <TabsList>
+                    <TabsTrigger value="rendered">Rendered</TabsTrigger>
+                    <TabsTrigger value="markdown">Markdown</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            </div>
+            
+            <Separator className="mb-6" />
+
+            {viewMode === "rendered" ? (
+              <div className="prose prose-sm max-w-none">
+                {content.content.map((item, index) => (
+                  <div key={index} className="mb-4">
+                    {/* Text content */}
+                    {item.type === "text" && (
+                      <div className={isTranslated ? "grid grid-cols-1 md:grid-cols-2 gap-4" : ""}>
+                        <div>
+                          <p className="text-gray-900">{item.content}</p>
+                        </div>
+                        
+                        {item.translatedContent && (
+                          <div className="bg-gray-50 p-3 rounded border-l-4 border-blue-500">
+                            <p className="text-gray-900">{item.translatedContent}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Heading content */}
+                    {item.type === "heading" && (
+                      <div>
+                        <h3 className="text-lg font-semibold mt-6 mb-2">{item.content}</h3>
+                        {item.translatedContent && (
+                          <h4 className="text-md font-medium mt-1 mb-2 text-blue-600">
+                            {item.translatedContent}
+                          </h4>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Code content */}
+                    {item.type === "code" && (
+                      <div className={isTranslated ? "grid grid-cols-1 md:grid-cols-2 gap-4" : ""}>
+                        <div className="bg-gray-800 text-gray-100 p-3 rounded-md overflow-x-auto">
+                          <pre className="text-xs">{item.content}</pre>
+                        </div>
+                        
+                        {item.translatedContent && (
+                          <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
+                            <p className="text-sm text-gray-800">{item.translatedContent}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Table content */}
+                    {item.type === "table" && (
+                      <div className={isTranslated && item.translatedHeaders && item.translatedRows 
+                        ? "grid grid-cols-1 gap-6 mt-4" 
+                        : ""}>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                {item.headers?.map((header, headerIndex) => (
+                                  <th
+                                    key={headerIndex}
+                                    scope="col"
+                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                  >
+                                    {header}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {item.rows?.map((row, rowIndex) => (
+                                <tr
+                                  key={rowIndex}
+                                  className={rowIndex % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                                >
+                                  {row.map((cell, cellIndex) => (
+                                    <td
+                                      key={cellIndex}
+                                      className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                                    >
+                                      {cell}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        
+                        {item.translatedHeaders && item.translatedRows && (
+                          <div className="overflow-x-auto mt-4">
+                            <h4 className="text-md font-medium mb-2 text-blue-600">Translated Table</h4>
+                            <table className="min-w-full divide-y divide-blue-100 border border-blue-200">
+                              <thead className="bg-blue-50">
+                                <tr>
+                                  {item.translatedHeaders?.map((header, headerIndex) => (
+                                    <th
+                                      key={headerIndex}
+                                      scope="col"
+                                      className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider"
+                                    >
+                                      {header}
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-blue-100">
+                                {item.translatedRows?.map((row, rowIndex) => (
+                                  <tr
+                                    key={rowIndex}
+                                    className={rowIndex % 2 === 0 ? "bg-white" : "bg-blue-50"}
+                                  >
+                                    {row.map((cell, cellIndex) => (
+                                      <td
+                                        key={cellIndex}
+                                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-700"
+                                      >
+                                        {cell}
+                                      </td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                <div className="prose max-w-none">
+                  <div dangerouslySetInnerHTML={{ 
+                    __html: formatExtractedContentAsMarkdown(content)
+                      .replace(/\n/g, '<br/>')
+                      .replace(/#{3,} (.*)/g, '<h3>$1</h3>')
+                      .replace(/#{2} (.*)/g, '<h2>$1</h2>')
+                      .replace(/#{1} (.*)/g, '<h1>$1</h1>')
+                  }} />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

@@ -32,7 +32,9 @@ export function formatDate(date: Date | string): string {
 
 // Check if file is PDF
 export function isPdfFile(file: File): boolean {
-  return file.type === 'application/pdf';
+  // More lenient check - either check MIME type or extension
+  return file.type === 'application/pdf' || 
+         file.name.toLowerCase().endsWith('.pdf');
 }
 
 // Read file as base64

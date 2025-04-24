@@ -6,7 +6,7 @@ import { PDFDropzone } from "@/components/PDFDropzone";
 import { ProcessingOptions } from "@/components/ProcessingOptions";
 import { TranslationOptions } from "@/components/TranslationOptions";
 import { LoadingState } from "@/components/LoadingState";
-import { ExtractedContent } from "@/components/ExtractedContent";
+import { ExtractedContentNew as ExtractedContent } from "@/components/ExtractedContentNew";
 import { useToast } from "@/hooks/use-toast";
 import { pdfApi } from "@/lib/api";
 import { 

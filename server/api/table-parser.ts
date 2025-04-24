@@ -58,7 +58,68 @@ function parseTablesFromText(content: string, fileName: string): ContentItem[] {
   
   console.log(`Content analysis: Tables detected: ${hasTable}, Structured lists detected: ${hasStructuredList}`);
   
-  // Process content for tables, structured lists, and text sections
+  // First check if we should process in raw preservation mode
+  // This is a special path to keep the exact raw text when dealing with documents that need full text preservation
+  const shouldPreserveRawText = content.length > 0 && !hasTable && !hasStructuredList;
+  
+  if (shouldPreserveRawText) {
+    console.log('Using raw text preservation mode for full content extraction');
+    
+    // Split by clear heading patterns but preserve most of the original formatting
+    const headingPattern = /\n\s*#{1,3}\s+([^\n]+)|^([A-Z][A-Z\s]+(?::|：))|^\s*([A-Z][a-zA-Z\s]+)(?:\n\s*[-=]+\s*$)/gm;
+    
+    // Extract potential headings
+    const headings: {text: string, index: number}[] = [];
+    let match;
+    while ((match = headingPattern.exec(cleanedContent)) !== null) {
+      const headingText = match[1] || match[2] || match[3];
+      if (headingText && headingText.trim().length > 0) {
+        headings.push({
+          text: headingText.trim(),
+          index: match.index
+        });
+      }
+    }
+    
+    // If we found headings, use them to split the content
+    if (headings.length > 1) {
+      for (let i = 0; i < headings.length; i++) {
+        const currentHeading = headings[i];
+        const nextHeading = headings[i + 1];
+        const sectionEnd = nextHeading ? nextHeading.index : cleanedContent.length;
+        
+        // Add the heading
+        contentItems.push({
+          type: "heading",
+          content: currentHeading.text
+        });
+        
+        // Get section content between this heading and the next one
+        if (sectionEnd > currentHeading.index) {
+          const sectionStart = currentHeading.index + currentHeading.text.length;
+          const sectionContent = cleanedContent.substring(sectionStart, sectionEnd).trim();
+          if (sectionContent.length > 0) {
+            contentItems.push({
+              type: "text",
+              content: sectionContent
+            });
+          }
+        }
+      }
+    }
+    
+    // If we couldn't identify clear sections, preserve the entire text as one item
+    if (contentItems.length <= 1) {  // Only the title is present
+      contentItems.push({
+        type: "text",
+        content: cleanedContent
+      });
+    }
+    
+    return contentItems;
+  }
+  
+  // Regular processing for structured content
   if (hasTable || hasStructuredList) {
     console.log('Structured data detected, processing tables and lists');
     

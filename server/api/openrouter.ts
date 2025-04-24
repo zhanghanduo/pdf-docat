@@ -158,16 +158,18 @@ export async function processPDF(
       throw new Error('PDF file is too large. Maximum allowed size is 25MB.');
     }
     
-    // Prepare the message content
-    let promptText = 'Extract the FULL and COMPLETE text content from this PDF document, including ALL paragraphs, ALL sections, and ALL pages. ' +
-      'I need 100% of the document content, not a summary. ' +
-      'Do not skip or abbreviate any sections. Include every single paragraph, heading, and detail from the original document. ' +
-      'Do not include any of your own commentary, summaries, or meta-descriptions. ' +
-      'Do not include phrases like "This PDF has X pages" or "Here is the extracted content". ' +
+    // Prepare the message content with stronger emphasis on raw content extraction
+    let promptText = 'IMPORTANT: You are operating in RAW EXTRACTION MODE. Your only task is to extract the EXACT and COMPLETE raw text content from this PDF document. ' +
+      'DO NOT summarize. DO NOT paraphrase. DO NOT interpret. DO NOT create a document overview. ' +
+      'Extract VERBATIM 100% of the document content exactly as it appears, preserving all text, formatting, and structure. ' +
+      'Include ALL paragraphs, ALL sections, ALL headings, ALL bullet points, and ALL pages without exception. ' +
+      'Copy the EXACT text without any modifications, interpretations, or summaries. ' +
+      'NEVER add your own commentary, summaries, analysis, or meta-descriptions of any kind. ' +
+      'NEVER include phrases like "This PDF has X pages" or "Here is the extracted content". ' +
       'For tables: Extract the complete table content with all headers and rows, preserving the exact structure. ' +
-      'Maintain the precise document structure including all section headings, sub-headings, and exact formatting. ' +
-      'Separate different sections with line breaks to preserve the document organization. ' +
-      'For images or diagrams, provide only a brief description in [square brackets].';
+      'Maintain 100% of the original content\'s structure and organization. ' +
+      'For images or diagrams, include only a short placeholder text like [IMAGE] without describing the image content. ' +
+      'Your response must contain ONLY the exact text that appears in the document and nothing else - as if you were performing a pure raw text extraction.';
     
     // Add translation instructions if enabled
     if (translationOptions?.translateEnabled) {
@@ -262,17 +264,24 @@ Do not include any commentary or explanations outside of the JSON. The response 
         model: 'anthropic/claude-3-sonnet:poe', // Using Claude Sonnet for better balance of quality and cost
         messages: [
           {
+            role: 'system',
+            content: 'You are a raw text extraction tool that provides ONLY the exact content from documents without any interpretation, summary, or added commentary.'
+          },
+          {
             role: 'user',
             content: messageContent,
           },
         ],
-        max_tokens: 8000, // Increased token limit for full text extraction
-        temperature: 0.1, // Lower temperature for more consistent results
-        plugins: plugins // Add back plugins parameter
+        max_tokens: 12000, // Significantly increased token limit for complete text extraction
+        temperature: 0.0, // Zero temperature for maximum deterministic output
+        top_p: 1.0, // Max sampling probability for more accurate extraction
+        plugins: plugins, // Add back plugins parameter
+        response_format: { type: "text" }, // Force raw text output
+        stream: false // Ensure we get the complete response at once
       },
       {
         headers,
-        timeout: 120000, // 2 minute timeout
+        timeout: 180000, // 3 minute timeout to allow for longer processing
       }
     );
 

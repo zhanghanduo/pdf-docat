@@ -62,14 +62,20 @@ export type ExtractedContent = {
   content: Array<{
     type: "text" | "heading" | "code" | "table";
     content?: string;
+    translatedContent?: string;
     language?: string;
     headers?: string[];
+    translatedHeaders?: string[];
     rows?: string[][];
+    translatedRows?: string[][];
   }>;
   metadata: {
     extractionTime: string;
     wordCount: number;
     confidence: number;
+    isTranslated?: boolean;
+    sourceLanguage?: string;
+    targetLanguage?: string;
   };
 };
 

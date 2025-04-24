@@ -68,9 +68,9 @@ export async function processPDF(
     if (translationOptions?.translateEnabled) {
       const targetLang = translationOptions.targetLanguage.replace('-', ' ');
       if (translationOptions.dualLanguage) {
-        promptText += ` After extracting the content, please translate it to ${targetLang} and provide both the original text and the translation side by side or in separate sections.`;
+        promptText += ` After extracting the content, please translate it to ${targetLang} and return the content in a structured JSON format where each section has both 'original' and 'translated' versions. The structure should be easy to parse programmatically. The format for each content block should be: {"type": "[content_type]", "content": "[original_text]", "translatedContent": "[translated_text]"}. For tables, include both the original and translated headers and rows.`;
       } else {
-        promptText += ` After extracting the content, please translate it to ${targetLang}.`;
+        promptText += ` After extracting the content, please translate it to ${targetLang}. Return the translated content only.`;
       }
     }
     
@@ -212,46 +212,234 @@ function parseExtractedContent(content: string, fileName: string): ExtractedCont
   try {
     console.log('Beginning content parsing');
     
-    // Try to identify table structures in the content
-    const tableRegex = /\|(.+)\|/g;
-    const hasTable = tableRegex.test(content);
+    // Attempt to parse content as JSON if it appears to be in JSON format
+    let isTranslatedContent = false;
+    let targetLanguage;
+    let contentItems = [];
+    let decodedContent = content;
+
+    try {
+      // Check if the content includes JSON blocks
+      if (content.includes('{"type":') || content.trim().startsWith('[') || content.trim().startsWith('{')) {
+        // Extract JSON objects from the content if they exist
+        const jsonMatches = content.match(/\{[\s\S]*?\}/g);
+        
+        if (jsonMatches && jsonMatches.length > 0) {
+          // Try to parse each JSON object
+          const parsedItems = [];
+          
+          for (const jsonStr of jsonMatches) {
+            try {
+              const item = JSON.parse(jsonStr);
+              
+              // Check if this is a content item with translations
+              if (item.type && (item.content || item.translatedContent)) {
+                isTranslatedContent = !!item.translatedContent;
+                parsedItems.push(item);
+              }
+            } catch (err) {
+              console.warn('Failed to parse potential JSON item:', jsonStr.substring(0, 50) + '...');
+            }
+          }
+          
+          if (parsedItems.length > 0) {
+            contentItems = parsedItems;
+            console.log(`Successfully parsed ${parsedItems.length} structured content items`);
+          }
+        }
+        
+        // If we couldn't parse individual items, try to parse the entire response
+        if (contentItems.length === 0) {
+          try {
+            // Look for JSON in the content - it might be wrapped in markdown code blocks
+            const jsonPattern = /```(?:json)?\s*([\s\S]*?)\s*```/g;
+            const matches = [...content.matchAll(jsonPattern)];
+            
+            if (matches.length > 0) {
+              // Use the largest JSON block found
+              let largestMatch = matches[0][1];
+              for (const match of matches) {
+                if (match[1].length > largestMatch.length) {
+                  largestMatch = match[1];
+                }
+              }
+              
+              const parsed = JSON.parse(largestMatch);
+              if (Array.isArray(parsed)) {
+                contentItems = parsed;
+                console.log('Successfully parsed content as a JSON array');
+              } else if (parsed.content && Array.isArray(parsed.content)) {
+                contentItems = parsed.content;
+                console.log('Successfully parsed content from a nested JSON object');
+                
+                // Check if this is translated content
+                if (parsed.metadata?.targetLanguage) {
+                  isTranslatedContent = true;
+                  targetLanguage = parsed.metadata.targetLanguage;
+                }
+              }
+            }
+          } catch (err) {
+            console.warn('Failed to parse content as complete JSON:', err.message);
+          }
+        }
+      }
+    } catch (jsonError) {
+      console.warn('Error trying to parse JSON content:', jsonError.message);
+    }
     
-    let contentItems: Array<{
-      type: "text" | "heading" | "code" | "table";
-      content?: string;
-      language?: string;
-      headers?: string[];
-      rows?: string[][];
-    }> = [];
-    
-    // Add initial welcome message
-    contentItems.push({
-      type: "heading",
-      content: `Extracted Content from ${fileName}`,
-    });
-    
-    // Process content for tables and text sections
-    if (hasTable) {
-      console.log('Tables detected in content, processing structured data');
-      // This is a simple approach - in production, you'd want more sophisticated table detection
-      // Split content by sections and identify tables vs. text
+    // If we couldn't parse JSON, fall back to text processing
+    if (contentItems.length === 0) {
+      console.log('Falling back to text processing');
       
-      // For now, we'll just add the content with identified table areas
+      // Try to identify table structures in the content
+      const tableRegex = /\|(.+)\|/g;
+      const hasTable = tableRegex.test(content);
+      
+      // Add initial welcome message
       contentItems.push({
-        type: "text",
-        content: 'The following content has been extracted and includes tables:',
+        type: "heading",
+        content: `Extracted Content from ${fileName}`,
       });
       
-      contentItems.push({
-        type: "text",
-        content: content,
-      });
-    } else {
-      // Just plain text without tables
-      contentItems.push({
-        type: "text",
-        content: content,
-      });
+      // Process content for tables and text sections
+      if (hasTable) {
+        console.log('Tables detected in content, processing structured data');
+        
+        // Split the content by markdown table patterns
+        const sections = content.split(/(?=\|[\s\S]+\|)/g);
+        
+        for (const section of sections) {
+          if (section.trim().startsWith('|') && section.includes('|')) {
+            // This looks like a table, try to parse it
+            try {
+              const tableLines = section.split('\n').filter(line => line.trim().length > 0);
+              const headerLine = tableLines[0];
+              const separatorLine = tableLines[1];
+              
+              if (headerLine && separatorLine && separatorLine.includes('|-')) {
+                // Extract headers
+                const headers = headerLine
+                  .split('|')
+                  .filter(cell => cell.trim().length > 0)
+                  .map(cell => cell.trim());
+                
+                // Extract rows
+                const rows = tableLines.slice(2).map(line => 
+                  line.split('|')
+                    .filter(cell => cell.trim().length > 0)
+                    .map(cell => cell.trim())
+                );
+                
+                contentItems.push({
+                  type: "table",
+                  headers,
+                  rows
+                });
+              } else {
+                // Not a properly formatted table, treat as text
+                contentItems.push({
+                  type: "text",
+                  content: section,
+                });
+              }
+            } catch (tableError) {
+              // If table parsing fails, add as text
+              contentItems.push({
+                type: "text",
+                content: section,
+              });
+            }
+          } else if (section.trim().length > 0) {
+            // Regular text content
+            contentItems.push({
+              type: "text",
+              content: section.trim(),
+            });
+          }
+        }
+      } else {
+        // Process regular text content with markdown aware parsing
+        // Split by headers
+        const lines = content.split('\n');
+        let currentSection = "";
+        
+        for (const line of lines) {
+          // Check if this is a heading
+          if (line.startsWith('# ')) {
+            // If we have accumulated text, add it before starting a new section
+            if (currentSection.trim().length > 0) {
+              contentItems.push({
+                type: "text",
+                content: currentSection.trim(),
+              });
+              currentSection = "";
+            }
+            
+            contentItems.push({
+              type: "heading",
+              content: line.substring(2).trim(),
+            });
+          } else if (line.startsWith('## ') || line.startsWith('### ')) {
+            // If we have accumulated text, add it before starting a new section
+            if (currentSection.trim().length > 0) {
+              contentItems.push({
+                type: "text",
+                content: currentSection.trim(),
+              });
+              currentSection = "";
+            }
+            
+            contentItems.push({
+              type: "heading",
+              content: line.substring(line.indexOf(' ')).trim(),
+            });
+          } else if (line.startsWith('```')) {
+            // Code block start/end
+            if (line.length > 3) {
+              // Code block with language specification
+              const language = line.substring(3).trim();
+              
+              // If we have accumulated text, add it
+              if (currentSection.trim().length > 0) {
+                contentItems.push({
+                  type: "text",
+                  content: currentSection.trim(),
+                });
+                currentSection = "";
+              }
+              
+              // Find the end of the code block
+              let codeContent = "";
+              let i = lines.indexOf(line) + 1;
+              while (i < lines.length && !lines[i].startsWith('```')) {
+                codeContent += lines[i] + '\n';
+                i++;
+              }
+              
+              contentItems.push({
+                type: "code",
+                content: codeContent.trim(),
+                language: language || undefined,
+              });
+              
+              // Skip the lines we've processed
+              lines.splice(lines.indexOf(line), i - lines.indexOf(line) + 1);
+            }
+          } else {
+            // Regular line, accumulate it
+            currentSection += line + '\n';
+          }
+        }
+        
+        // Add any remaining text
+        if (currentSection.trim().length > 0) {
+          contentItems.push({
+            type: "text",
+            content: currentSection.trim(),
+          });
+        }
+      }
     }
     
     // Count words for metadata
@@ -265,6 +453,8 @@ function parseExtractedContent(content: string, fileName: string): ExtractedCont
         extractionTime: new Date().toISOString(),
         wordCount: wordCount,
         confidence: 0.95,
+        isTranslated: isTranslatedContent,
+        targetLanguage: targetLanguage,
       },
     };
   } catch (error) {

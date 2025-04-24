@@ -6,6 +6,7 @@ import { exportAsText, exportAsJson, exportAsMarkdown, formatExtractedContentAsM
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { DocumentInfo } from "@/components/DocumentInfo";
+import { useLanguage } from "@/hooks/use-language";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -23,6 +24,7 @@ export const ExtractedContentNew: React.FC<ExtractedContentProps> = ({
   processingTime = 0,
 }) => {
   const [viewMode, setViewMode] = useState<"rendered" | "markdown">("markdown");
+  const { t } = useLanguage();
   
   const handleExportText = () => {
     exportAsText(content, fileName);
@@ -43,24 +45,24 @@ export const ExtractedContentNew: React.FC<ExtractedContentProps> = ({
     <Card className="mt-8">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <h3 className="text-lg font-medium text-gray-900">Extracted Content</h3>
+          <h3 className="text-lg font-medium text-gray-900">{t('extracted_content')}</h3>
           <p className="text-sm text-gray-500">
-            Content extracted from your document
-            {isTranslated && " (with translation)"}
+            {t('content_extracted')}
+            {isTranslated && t('with_translation')}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={handleExportText}>
-            Export as TXT
+            {t('export_txt')}
           </Button>
           <Button variant="outline" size="sm" onClick={handleExportMarkdown}>
-            Export as MD
+            {t('export_md')}
           </Button>
           <Button variant="outline" size="sm" onClick={handleExportJSON}>
-            Export as JSON
+            {t('export_json')}
           </Button>
           <Button size="sm" onClick={onProcessAnother}>
-            Process Another
+            {t('process_another')}
           </Button>
         </div>
       </CardHeader>
@@ -84,8 +86,8 @@ export const ExtractedContentNew: React.FC<ExtractedContentProps> = ({
               <div className="flex items-center space-x-2">
                 <Tabs defaultValue="markdown" onValueChange={(v) => setViewMode(v as "rendered" | "markdown")}>
                   <TabsList>
-                    <TabsTrigger value="markdown">Enhanced View</TabsTrigger>
-                    <TabsTrigger value="rendered">Classic View</TabsTrigger>
+                    <TabsTrigger value="markdown">{t('enhanced_view')}</TabsTrigger>
+                    <TabsTrigger value="rendered">{t('classic_view')}</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
@@ -147,7 +149,7 @@ export const ExtractedContentNew: React.FC<ExtractedContentProps> = ({
                         <div className="overflow-x-auto">
                           {!item.headers || !item.rows || item.headers.length === 0 || item.rows.length === 0 ? (
                             <div className="p-4 border border-gray-200 rounded bg-gray-50">
-                              <p className="text-gray-500">Table could not be rendered (missing data)</p>
+                              <p className="text-gray-500">{t('table_missing_data')}</p>
                             </div>
                           ) : (
                             <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
@@ -198,7 +200,7 @@ export const ExtractedContentNew: React.FC<ExtractedContentProps> = ({
                         
                         {item.translatedHeaders && item.translatedRows && (
                           <div className="overflow-x-auto mt-4">
-                            <h4 className="text-md font-medium mb-2 text-blue-600">Translated Table</h4>
+                            <h4 className="text-md font-medium mb-2 text-blue-600">{t('translated_table')}</h4>
                             <table className="min-w-full divide-y divide-blue-100 border border-blue-200">
                               <thead className="bg-blue-50">
                                 <tr>

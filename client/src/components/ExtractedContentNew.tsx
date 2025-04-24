@@ -6,6 +6,8 @@ import { exportAsText, exportAsJson, exportAsMarkdown, formatExtractedContentAsM
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { DocumentInfo } from "@/components/DocumentInfo";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface ExtractedContentProps {
   content: ExtractedContentType;
@@ -249,65 +251,13 @@ export const ExtractedContentNew: React.FC<ExtractedContentProps> = ({
               </div>
             ) : (
               <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-                <div className="prose prose-headings:my-4 prose-headings:font-bold prose-hr:my-4 max-w-none">
-                  <div dangerouslySetInnerHTML={{ 
-                    __html: formatExtractedContentAsMarkdown(content)
-                      // Basic formatting - convert newlines to breaks
-                      .replace(/\n\n/g, '</p><p>')
-                      .replace(/\n/g, '<br/>')
-                      
-                      // Headers with proper hierarchy
-                      .replace(/# (.*?)(\n|\r|$)/g, '<h1 class="text-3xl font-extrabold mt-6 mb-4 text-gray-900">$1</h1>')
-                      .replace(/## (.*?)(\n|\r|$)/g, '<h2 class="text-2xl font-bold mt-5 mb-3 text-gray-800">$1</h2>')
-                      .replace(/### (.*?)(\n|\r|$)/g, '<h3 class="text-xl font-semibold mt-4 mb-2 text-gray-800">$1</h3>')
-                      .replace(/#### (.*?)(\n|\r|$)/g, '<h4 class="text-lg font-medium mt-3 mb-2 text-gray-700">$1</h4>')
-                      
-                      // Legacy format compatibility
-                      .replace(/Heading: (.*?)(\n|\r|$)/g, '<h3 class="text-xl font-bold mt-4 mb-2">$1</h3>')
-                      .replace(/Section: (.*?)(\n|\r|$)/g, '<h2 class="text-2xl font-bold mt-5 mb-3">$1</h2>')
-                      .replace(/Subheading: (.*?)(\n|\r|$)/g, '<h4 class="text-lg font-medium mt-3 mb-2">$1</h4>')
-                      
-                      // Page separators
-                      .replace(/---/g, '<hr class="my-6 border-t-2 border-gray-300" />')
-                      .replace(/Page break/g, '<hr class="my-6 border-t-2 border-gray-300" />')
-                      .replace(/Page separator/g, '<hr class="my-4 border-t border-gray-200" />')
-                      
-                      // Fix bullet points and lists
-                      .replace(/- (.*?)(\n|\r|$)/g, '<li>$1</li>')
-                      .replace(/<li>.*?<\/li>/g, match => `<ul class="list-disc pl-5 my-3">${match}</ul>`)
-                      
-                      // Code blocks - use proper syntax highlighting styling
-                      .replace(/```(.*?)\n([\s\S]*?)```/g, '<pre class="bg-gray-800 text-gray-100 p-3 rounded-md overflow-x-auto my-4"><code>$2</code></pre>')
-                      
-                      // Proper table rendering with responsive design
-                      // First, identify full markdown tables with headers, separator and rows
-                      .replace(/\|(.*)\|\n\|([-:\s|]*)\|\n((\|.*\|\n)+)/g, (match: string, header: string, separator: string, rows: string) => {
-                        // Process header row
-                        const headers = header.split('|').map((cell: string) => cell.trim()).filter((cell: string) => cell !== '');
-                        const headerRow = `<tr>${headers.map((h: string) => `<th class="px-4 py-2 bg-gray-100 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">${h}</th>`).join('')}</tr>`;
-                        
-                        // Process data rows
-                        const dataRows = rows.trim().split('\n').map((row: string) => {
-                          const cells = row.split('|').map((cell: string) => cell.trim()).filter((cell: string) => cell !== '');
-                          return `<tr>${cells.map((cell: string) => `<td class="px-4 py-2 border-t border-gray-200 text-sm">${cell}</td>`).join('')}</tr>`;
-                        }).join('');
-                        
-                        // Return complete table
-                        return `<div class="overflow-x-auto my-6">
-                          <table class="min-w-full divide-y divide-gray-300 border border-gray-200 rounded-md">
-                            <thead>${headerRow}</thead>
-                            <tbody class="bg-white divide-y divide-gray-200">${dataRows}</tbody>
-                          </table>
-                        </div>`;
-                      })
-                      
-                      // Handle table section headers separately
-                      .replace(/### Table\s*$/gm, '<h3 class="text-lg font-semibold mt-6 mb-2">Table</h3>')
-                      .replace(/### Translated Table\s*$/gm, '<h3 class="text-lg font-semibold mt-6 mb-2 text-blue-600">Translated Table</h3>')
-                      
-                      // Format translations
-                      .replace(/\*Translation:\*([\s\S]*?)(?=<h|<hr|$)/g, '<div class="bg-blue-50 p-3 mt-2 mb-4 rounded border-l-4 border-blue-500"><p class="text-gray-800">$1</p></div>')
-                  }} />
+                <div className="prose max-w-none">
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]} 
+                    className="prose prose-slate prose-headings:font-bold prose-headings:mb-4 prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-h4:text-lg prose-p:my-4 prose-li:my-1 prose-table:border-collapse"
+                  >
+                    {formatExtractedContentAsMarkdown(content)}
+                  </ReactMarkdown>
                 </div>
               </div>
             )}

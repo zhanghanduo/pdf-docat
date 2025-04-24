@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -28,6 +28,7 @@ export const processingLogs = pgTable("processing_logs", {
   userId: integer("user_id").notNull(),
   fileName: text("file_name").notNull(),
   fileSize: integer("file_size").notNull(),
+  fileHash: varchar("file_hash", { length: 64 }),
   engine: text("engine").notNull(),
   status: text("status").notNull(),
   processingTime: integer("processing_time"),

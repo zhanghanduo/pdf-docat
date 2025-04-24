@@ -19,6 +19,7 @@ export interface IStorage {
   createProcessingLog(log: InsertProcessingLog): Promise<ProcessingLog>;
   getProcessingLogsByUserId(userId: number, limit?: number, offset?: number): Promise<ProcessingLog[]>;
   getProcessingLogById(id: number): Promise<ProcessingLog | undefined>;
+  getProcessingLogByFileHash(fileHash: string): Promise<ProcessingLog | undefined>;
   getTotalProcessingLogs(userId?: number): Promise<number>;
 }
 
@@ -96,6 +97,7 @@ export class MemStorage implements IStorage {
       userId: insertLog.userId,
       fileName: insertLog.fileName,
       fileSize: insertLog.fileSize,
+      fileHash: insertLog.fileHash || null,
       engine: insertLog.engine,
       status: insertLog.status,
       processingTime: insertLog.processingTime || null,
@@ -121,6 +123,12 @@ export class MemStorage implements IStorage {
 
   async getProcessingLogById(id: number): Promise<ProcessingLog | undefined> {
     return this.processingLogs.get(id);
+  }
+  
+  async getProcessingLogByFileHash(fileHash: string): Promise<ProcessingLog | undefined> {
+    return Array.from(this.processingLogs.values()).find(
+      (log) => log.fileHash === fileHash
+    );
   }
 
   async getTotalProcessingLogs(userId?: number): Promise<number> {

@@ -254,7 +254,23 @@ export const ExtractedContentNew: React.FC<ExtractedContentProps> = ({
                 <div className="prose max-w-none">
                   <ReactMarkdown 
                     remarkPlugins={[remarkGfm]} 
-                    className="prose prose-slate prose-headings:font-bold prose-headings:mb-4 prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-h4:text-lg prose-p:my-4 prose-li:my-1 prose-table:border-collapse"
+                    components={{
+                      // Apply Tailwind classes to various elements
+                      h1: ({node, ...props}) => <h1 className="text-3xl font-bold mb-4" {...props} />,
+                      h2: ({node, ...props}) => <h2 className="text-2xl font-bold mb-4" {...props} />,
+                      h3: ({node, ...props}) => <h3 className="text-xl font-semibold mb-3" {...props} />,
+                      h4: ({node, ...props}) => <h4 className="text-lg font-medium mb-2" {...props} />,
+                      p: ({node, ...props}) => <p className="my-4" {...props} />,
+                      ul: ({node, ...props}) => <ul className="list-disc pl-5 my-3" {...props} />,
+                      ol: ({node, ...props}) => <ol className="list-decimal pl-5 my-3" {...props} />,
+                      li: ({node, ...props}) => <li className="my-1" {...props} />,
+                      table: ({node, ...props}) => <div className="overflow-x-auto my-4"><table className="min-w-full border border-gray-300" {...props} /></div>,
+                      th: ({node, ...props}) => <th className="px-4 py-2 bg-gray-100 text-left font-medium" {...props} />,
+                      td: ({node, ...props}) => <td className="px-4 py-2 border border-gray-200" {...props} />,
+                      pre: ({node, ...props}) => <pre className="bg-gray-800 text-gray-100 p-3 rounded-md overflow-x-auto my-4" {...props} />,
+                      code: ({node, ...props}) => 
+                        <code className="bg-gray-100 text-red-500 px-1 py-0.5 rounded" {...props} />
+                    }}
                   >
                     {formatExtractedContentAsMarkdown(content)}
                   </ReactMarkdown>

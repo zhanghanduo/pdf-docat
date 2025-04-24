@@ -66,13 +66,19 @@ export async function processPDF(
     }
     
     // Prepare the message content
-    let promptText = 'Please extract all content from this PDF including text, tables, and structured data. Format tables properly and maintain the document structure. Also summarize any diagrams or images if present.';
+    let promptText = 'Please extract all content from this PDF including text, tables, and structured data. ' +
+      'Please maintain the document structure exactly as presented in the PDF. ' +
+      'Count the total number of pages in the PDF document and include that in your response. ' +
+      'For tables: Preserve the exact structure with proper headers and row alignment. Tables should be formatted in a clean, consistent way that preserves all columns and rows. ' +
+      'Make sure to clearly separate different sections and maintain proper indentation for nested elements. ' +
+      'Break content by page, marking each page with a clear separator. ' +
+      'Also summarize any diagrams or images if present.';
     
     // Add translation instructions if enabled
     if (translationOptions?.translateEnabled) {
       const targetLang = translationOptions.targetLanguage.replace('-', ' ');
       if (translationOptions.dualLanguage) {
-        promptText += ` After extracting the content, please translate it to ${targetLang} and return the content in a structured JSON format where each section has both 'original' and 'translated' versions. The structure should be easy to parse programmatically. The format for each content block should be: {"type": "[content_type]", "content": "[original_text]", "translatedContent": "[translated_text]"}. For tables, include both the original and translated headers and rows.`;
+        promptText += ` After extracting the content, please translate it to ${targetLang} and return the content in a structured JSON format where each section has both 'original' and 'translated' versions. The structure should be easy to parse programmatically. The format for each content block should be: {"type": "[content_type]", "content": "[original_text]", "translatedContent": "[translated_text]"}. For tables, include both the original and translated headers and rows. Make sure table format is preserved identically in both languages.`;
       } else {
         promptText += ` After extracting the content, please translate it to ${targetLang}. Return the translated content only.`;
       }
@@ -501,9 +507,48 @@ function parseExtractedContent(content: string, fileName: string): ExtractedCont
     // Count words for metadata
     const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
     
+    // Extract page count from the content
+    let pageCount = 1;
+    try {
+      // Look for typical page count mentions in the content
+      const pageMatches = content.match(/(\d+)\s*pages|page\s*count:\s*(\d+)|total\s*pages:\s*(\d+)/i);
+      if (pageMatches) {
+        const foundCount = parseInt(pageMatches[1] || pageMatches[2] || pageMatches[3], 10);
+        if (!isNaN(foundCount) && foundCount > 0) {
+          pageCount = foundCount;
+          console.log(`Extracted page count: ${pageCount} pages`);
+        }
+      }
+      
+      // Check for Page X of Y patterns
+      const pageXofYMatch = content.match(/Page\s+\d+\s+of\s+(\d+)/i);
+      if (pageXofYMatch && pageXofYMatch[1]) {
+        const totalPages = parseInt(pageXofYMatch[1], 10);
+        if (!isNaN(totalPages) && totalPages > pageCount) {
+          pageCount = totalPages;
+          console.log(`Found "Page X of Y" format, total pages: ${pageCount}`);
+        }
+      }
+      
+      // Check content structure - if we have page markers like "Page 1", "Page 2", etc.
+      const pageMarkers = content.match(/Page\s+\d+/gi);
+      if (pageMarkers && pageMarkers.length > 0) {
+        const highestPage = Math.max(...pageMarkers.map(marker => {
+          const num = parseInt(marker.replace(/Page\s+/i, ''), 10);
+          return isNaN(num) ? 0 : num;
+        }));
+        if (highestPage > pageCount) {
+          pageCount = highestPage;
+          console.log(`Counted page markers, highest page: ${pageCount}`);
+        }
+      }
+    } catch (err) {
+      console.warn('Error extracting page count:', err);
+    }
+
     return {
       title: fileName.replace('.pdf', ''), // Remove .pdf extension from title
-      pages: 1, // This would be determined from the actual PDF in production
+      pages: pageCount,
       content: contentItems,
       metadata: {
         extractionTime: new Date().toISOString(),
@@ -517,9 +562,21 @@ function parseExtractedContent(content: string, fileName: string): ExtractedCont
     console.error('Error parsing extracted content:', error);
     
     // Return a fallback structure in case of parsing errors
+    let fallbackPageCount = 1;
+    try {
+      // Even in error case, try to extract page count
+      const pageMatches = content.match(/(\d+)\s*pages|page\s*count:\s*(\d+)|total\s*pages:\s*(\d+)/i);
+      if (pageMatches) {
+        const foundCount = parseInt(pageMatches[1] || pageMatches[2] || pageMatches[3], 10);
+        if (!isNaN(foundCount) && foundCount > 0) {
+          fallbackPageCount = foundCount;
+        }
+      }
+    } catch (err) {}
+
     return {
       title: fileName,
-      pages: 1,
+      pages: fallbackPageCount,
       content: [
         {
           type: "text",

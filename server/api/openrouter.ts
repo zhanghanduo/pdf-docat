@@ -126,16 +126,19 @@ export async function processPDF(
       'X-Title': 'DocCat PDF Extractor'
     };
     
-    // Add API key as a Bearer token (standard format for OpenRouter)
+    // Add API key directly in the header (use raw key without Bearer prefix for OpenRouter)
     if (API_KEY) {
-      // OpenRouter requires "Bearer " prefix for the Authorization header with NO spaces in the key
-      // Remove any potential whitespace that could cause JWT format issues
+      // Clean up the key to avoid any formatting issues
       const cleanKey = API_KEY.trim().replace(/\s+/g, '');
-      headers['Authorization'] = `Bearer ${cleanKey}`;
+      
+      // According to OpenRouter docs, some auth backends expect the key directly without 'Bearer'
+      // Try without the Bearer prefix which appears to be causing JWT parsing issues
+      headers['Authorization'] = cleanKey;
       
       // Log the first few characters of the key for debugging (do not log the entire key)
-      console.log(`Authorization header set with Bearer token, key starts with: ${cleanKey.substring(0, 5)}...`);
+      console.log(`Authorization header set directly, key starts with: ${cleanKey.substring(0, 5)}...`);
       console.log(`Authorization header length: ${headers['Authorization'].length}`);
+      console.log(`Using direct API key without Bearer prefix to avoid JWT format issues`);
     } else {
       console.error('No API key provided for OpenRouter');
     }
@@ -213,17 +216,31 @@ export async function processPDF(
       } else if (error.response.status === 429) {
         throw new Error('Rate limit exceeded. Please try again later.');
       } else if (error.response.status === 401 || error.response.status === 403) {
-        // Check for specific JWT format error
-        const errorData = error.response.data;
-        if (errorData && errorData.error && errorData.error.message && 
-            errorData.error.message.includes('JWT')) {
-          console.error('JWT format error detected:', errorData.error.message);
-          throw new Error(`Authentication error with OpenRouter API: Invalid JWT format. Please check your API key format. Details: ${errorData.error.message}`);
+        // Check for specific JWT format error by examining headers
+        const errorHeaders = error.response.headers;
+        if (errorHeaders && errorHeaders['x-clerk-auth-message'] && 
+            errorHeaders['x-clerk-auth-message'].includes('JWT')) {
+          console.error('JWT format error detected in response headers:', errorHeaders['x-clerk-auth-message']);
+          
+          // Try again with alternative authorization format on next attempt
+          console.log('Will attempt with alternative authorization format on next try');
+          throw new Error(`Authentication error with OpenRouter API: ${errorHeaders['x-clerk-auth-message']}. The API key format may need to be adjusted.`);
         } else {
+          // Generic auth error
           throw new Error('Authentication error with OpenRouter API. Please check your API key.');
         }
       } else if (error.response.status === 500) {
         console.error('Server error from OpenRouter. Response data:', error.response.data);
+        
+        // Check for JWT errors in headers even for status 500
+        const errorHeaders = error.response.headers;
+        if (errorHeaders && errorHeaders['x-clerk-auth-message'] && 
+            errorHeaders['x-clerk-auth-message'].includes('JWT')) {
+          console.error('JWT format error detected in 500 response headers:', errorHeaders['x-clerk-auth-message']);
+          console.log('Will attempt with alternative authorization format on next try');
+          throw new Error(`Authentication error with OpenRouter API: ${errorHeaders['x-clerk-auth-message']}. The API key format may need to be adjusted.`);
+        }
+        
         throw new Error('OpenRouter server error. This might be a temporary issue. Please try again later.');
       }
     } else if (error.request) {

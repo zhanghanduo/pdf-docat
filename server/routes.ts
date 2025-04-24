@@ -243,6 +243,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
+        // Check if user has exceeded their daily processing limit
+        // Get today's date at midnight for counting today's processing
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Count processing logs for this user today
+        const totalLogs = await storage.getTotalProcessingLogs(req.user!.id);
+        const MAX_DAILY_PROCESSING = 20; // Maximum number of PDFs a user can process per day
+        
+        if (totalLogs >= MAX_DAILY_PROCESSING) {
+          logUserAction(req.user!.id, "PDF processing error", { 
+            fileName: req.file.originalname, 
+            error: "Daily processing limit exceeded" 
+          });
+          return res.status(429).json({ 
+            message: `You have exceeded the daily limit of ${MAX_DAILY_PROCESSING} PDF files. Please try again tomorrow.`,
+            error: "Rate limit exceeded"
+          });
+        }
+        
         // Check file type
         if (req.file.mimetype !== 'application/pdf') {
           logUserAction(req.user!.id, "PDF processing error", { 

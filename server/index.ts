@@ -1,10 +1,35 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import rateLimit from "express-rate-limit";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Create rate limiters for different endpoints
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per window
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  message: 'Too many requests from this IP, please try again after 15 minutes',
+});
+
+// More strict limiter for PDF processing to control costs
+const pdfProcessingLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // Limit each IP to 10 PDF processing requests per hour
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'You have exceeded the PDF processing limit. Please try again later.',
+});
+
+// Apply rate limiting to all API requests
+app.use('/api/', apiLimiter);
+
+// Apply stricter limit to PDF processing endpoint
+app.use('/api/process-pdf', pdfProcessingLimiter);
 
 app.use((req, res, next) => {
   const start = Date.now();

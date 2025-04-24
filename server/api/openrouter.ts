@@ -10,7 +10,7 @@ console.log(`HTTP Referer will be set to: https://${HOSTNAME}`);
 
 // Function to validate API key format
 function validateApiKey(key: string): boolean {
-  // OpenRouter API keys typically start with "sk-or-v1-" and should be non-empty
+  // OpenRouter API keys typically start with "sk-or-" and should be non-empty
   return key.trim().length > 20 && key.startsWith('sk-or-');
 }
 
@@ -128,11 +128,14 @@ export async function processPDF(
     
     // Add API key as a Bearer token (standard format for OpenRouter)
     if (API_KEY) {
-      // OpenRouter requires "Bearer " prefix for the Authorization header
-      headers['Authorization'] = `Bearer ${API_KEY.trim()}`;
+      // OpenRouter requires "Bearer " prefix for the Authorization header with NO spaces in the key
+      // Remove any potential whitespace that could cause JWT format issues
+      const cleanKey = API_KEY.trim().replace(/\s+/g, '');
+      headers['Authorization'] = `Bearer ${cleanKey}`;
       
       // Log the first few characters of the key for debugging (do not log the entire key)
-      console.log(`Authorization header set with Bearer token, key starts with: ${API_KEY.substring(0, 5)}...`);
+      console.log(`Authorization header set with Bearer token, key starts with: ${cleanKey.substring(0, 5)}...`);
+      console.log(`Authorization header length: ${headers['Authorization'].length}`);
     } else {
       console.error('No API key provided for OpenRouter');
     }
@@ -210,7 +213,18 @@ export async function processPDF(
       } else if (error.response.status === 429) {
         throw new Error('Rate limit exceeded. Please try again later.');
       } else if (error.response.status === 401 || error.response.status === 403) {
-        throw new Error('Authentication error with OpenRouter API. Please check your API key.');
+        // Check for specific JWT format error
+        const errorData = error.response.data;
+        if (errorData && errorData.error && errorData.error.message && 
+            errorData.error.message.includes('JWT')) {
+          console.error('JWT format error detected:', errorData.error.message);
+          throw new Error(`Authentication error with OpenRouter API: Invalid JWT format. Please check your API key format. Details: ${errorData.error.message}`);
+        } else {
+          throw new Error('Authentication error with OpenRouter API. Please check your API key.');
+        }
+      } else if (error.response.status === 500) {
+        console.error('Server error from OpenRouter. Response data:', error.response.data);
+        throw new Error('OpenRouter server error. This might be a temporary issue. Please try again later.');
       }
     } else if (error.request) {
       // The request was made but no response was received
@@ -272,14 +286,22 @@ function parseExtractedContent(content: string, fileName: string): ExtractedCont
           try {
             // Look for JSON in the content - it might be wrapped in markdown code blocks
             const jsonPattern = /```(?:json)?\s*([\s\S]*?)\s*```/g;
-            const matches = [...content.matchAll(jsonPattern)];
+            let match;
+            let matches: string[] = [];
+            
+            // Manually collect matches instead of using matchAll which requires ES2015+
+            while ((match = jsonPattern.exec(content)) !== null) {
+              if (match[1]) {
+                matches.push(match[1]);
+              }
+            }
             
             if (matches.length > 0) {
               // Use the largest JSON block found
-              let largestMatch = matches[0][1];
-              for (const match of matches) {
-                if (match[1].length > largestMatch.length) {
-                  largestMatch = match[1];
+              let largestMatch = matches[0];
+              for (const matchText of matches) {
+                if (matchText.length > largestMatch.length) {
+                  largestMatch = matchText;
                 }
               }
               
@@ -298,13 +320,13 @@ function parseExtractedContent(content: string, fileName: string): ExtractedCont
                 }
               }
             }
-          } catch (err) {
-            console.warn('Failed to parse content as complete JSON:', err.message);
+          } catch (err: any) {
+            console.warn('Failed to parse content as complete JSON:', err.message || 'Unknown error');
           }
         }
       }
-    } catch (jsonError) {
-      console.warn('Error trying to parse JSON content:', jsonError.message);
+    } catch (jsonError: any) {
+      console.warn('Error trying to parse JSON content:', jsonError.message || 'Unknown error');
     }
     
     // If we couldn't parse JSON, fall back to text processing

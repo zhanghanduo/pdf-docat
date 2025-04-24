@@ -158,11 +158,19 @@ const DashboardPage: React.FC = () => {
                   onFileSelected={handleFileSelected}
                   className="mb-6"
                 />
-
+                
+                {/* The ProcessingOptions component is now hidden but still manages state */}
                 <ProcessingOptions
                   engine={processingEngine}
                   onChange={handleEngineChange}
                 />
+                
+                {/* Add an informative message about intelligent detection */}
+                <div className="mb-6 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md">
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    <span className="font-medium">Smart Detection:</span> DocCat will automatically determine if your PDF contains scanned images or structured text and apply the optimal processing method.
+                  </p>
+                </div>
 
                 <TranslationOptions
                   enabled={translationEnabled}

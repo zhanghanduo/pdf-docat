@@ -47,7 +47,7 @@ export type Login = z.infer<typeof loginSchema>;
 export type ProcessingLog = typeof processingLogs.$inferSelect;
 export type InsertProcessingLog = z.infer<typeof insertProcessingLogSchema>;
 
-export const engineTypes = ["mistral-ocr", "pdf-text", "native"] as const;
+export const engineTypes = ["auto", "mistral-ocr", "pdf-text", "native"] as const;
 export type EngineType = typeof engineTypes[number];
 
 export const processingStatus = ["idle", "uploading", "processing", "completed", "error"] as const;

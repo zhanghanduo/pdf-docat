@@ -32,11 +32,49 @@ export const encodeFileToBase64 = (buffer: Buffer): string => {
   return buffer.toString('base64');
 };
 
+// Function to detect if a PDF likely contains scanned content
+async function detectPdfType(pdfBase64: string): Promise<'scanned' | 'structured'> {
+  try {
+    // Simple heuristic: Check for image markers in the PDF binary data
+    // Common image markers in PDFs include /Image, /XObject, /JPXDecode, /DCTDecode
+    const decodedBuffer = Buffer.from(pdfBase64, 'base64');
+    const pdfTextSample = decodedBuffer.toString('ascii', 0, Math.min(10000, decodedBuffer.length));
+    
+    // Check for common image compression markers in PDFs
+    const hasImageMarkers = 
+      pdfTextSample.includes('/Image') ||
+      pdfTextSample.includes('/DCTDecode') || // JPEG compression
+      pdfTextSample.includes('/JPXDecode') || // JPEG2000 compression
+      pdfTextSample.includes('/CCITTFaxDecode'); // Fax compression
+    
+    // Check for text extraction markers
+    const hasTextMarkers = 
+      pdfTextSample.includes('/Text') ||
+      pdfTextSample.includes('/Font') ||
+      pdfTextSample.includes('/Contents') ||
+      pdfTextSample.includes('/ToUnicode');
+    
+    // If we have strong image markers but weak text markers, it's likely scanned
+    if (hasImageMarkers && !hasTextMarkers) {
+      console.log('PDF analysis: Detected as scanned document (image-based)');
+      return 'scanned';
+    }
+    
+    // Otherwise, assume it's a structured document
+    console.log('PDF analysis: Detected as structured document (text-based)');
+    return 'structured';
+  } catch (error) {
+    console.error('Error during PDF type detection:', error);
+    // Default to scanned if detection fails
+    return 'scanned'; 
+  }
+}
+
 // Process PDF with OpenRouter API
 export async function processPDF(
   pdfBase64: string,
   fileName: string,
-  engine: EngineType = 'mistral-ocr',
+  engine: EngineType = 'auto',
   fileAnnotations?: string,
   translationOptions?: {
     translateEnabled: boolean;
@@ -48,6 +86,12 @@ export async function processPDF(
   fileAnnotations: string;
 }> {
   try {
+    // If auto mode is selected, intelligently detect the document type
+    if (engine === 'auto') {
+      const pdfType = await detectPdfType(pdfBase64);
+      engine = pdfType === 'scanned' ? 'mistral-ocr' : 'pdf-text';
+      console.log(`Auto-selected engine: ${engine} based on document detection`);
+    }
     console.log(`Starting PDF processing for file: ${fileName} with engine: ${engine}`);
     
     // Check if API key is available

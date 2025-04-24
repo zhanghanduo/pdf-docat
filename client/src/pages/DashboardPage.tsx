@@ -154,11 +154,47 @@ const DashboardPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-10 text-center">
           <h1 className="gradient-heading text-4xl font-bold mb-4">
-            {t('pdf_extraction')}
+            DocCat
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {t('upload_description')}
+            {t('pdf_extraction')}
           </p>
+        </div>
+        
+        {/* Feature introduction section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          {/* PDF Content Extraction */}
+          <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-6 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center">
+                <FileText className="h-8 w-8 text-blue-600 dark:text-blue-300" />
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold mb-2 text-blue-700 dark:text-blue-300">{t('feature_pdf_extraction')}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300">{t('feature_pdf_extraction_desc')}</p>
+          </div>
+          
+          {/* Multi-language Translation */}
+          <div className="bg-green-50 dark:bg-green-900/30 rounded-lg p-6 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center">
+                <Languages className="h-8 w-8 text-green-600 dark:text-green-300" />
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold mb-2 text-green-700 dark:text-green-300">{t('feature_translation')}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300">{t('feature_translation_desc')}</p>
+          </div>
+          
+          {/* Structured Markdown */}
+          <div className="bg-purple-50 dark:bg-purple-900/30 rounded-lg p-6 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="w-14 h-14 rounded-full bg-purple-100 dark:bg-purple-800 flex items-center justify-center">
+                <FileCode className="h-8 w-8 text-purple-600 dark:text-purple-300" />
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold mb-2 text-purple-700 dark:text-purple-300">{t('feature_markdown')}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300">{t('feature_markdown_desc')}</p>
+          </div>
         </div>
 
         {/* Main processing card */}

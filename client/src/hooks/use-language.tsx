@@ -32,6 +32,14 @@ const translations: Record<string, Record<string, string>> = {
     'processing_complete': 'Processing complete',
     'processing_time': 'Your PDF has been successfully processed in {0} seconds',
     
+    // Feature introduction cards
+    'feature_pdf_extraction': 'PDF Content Extraction',
+    'feature_pdf_extraction_desc': 'Extract text from all types of PDF documents with high accuracy, including scanned images.',
+    'feature_translation': 'Multi-language Translation',
+    'feature_translation_desc': 'Seamlessly translate extracted content between multiple languages.',
+    'feature_markdown': 'Structured Markdown',
+    'feature_markdown_desc': 'Convert extracted content into well-structured markdown format for easy use.',
+    
     // Extract content
     'extracted_content': 'Extracted Content',
     'content_extracted': 'Content extracted from your document',
@@ -144,6 +152,14 @@ const translations: Record<string, Record<string, string>> = {
     'process_document': '处理文档',
     'processing_complete': '处理完成',
     'processing_time': '您的 PDF 已成功处理，耗时 {0} 秒',
+    
+    // Feature introduction cards
+    'feature_pdf_extraction': 'PDF内容提取',
+    'feature_pdf_extraction_desc': '高精度提取各类PDF文档（包括扫描图文件）中的文本内容',
+    'feature_translation': '多语言翻译',
+    'feature_translation_desc': '无缝翻译提取的内容，支持多种语言之间的转换',
+    'feature_markdown': '结构化Markdown',
+    'feature_markdown_desc': '将提取的内容转换为结构良好的markdown格式，方便使用',
     
     // Extract content
     'extracted_content': '提取的内容',

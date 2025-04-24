@@ -252,18 +252,39 @@ export const ExtractedContentNew: React.FC<ExtractedContentProps> = ({
                 <div className="prose max-w-none">
                   <div dangerouslySetInnerHTML={{ 
                     __html: formatExtractedContentAsMarkdown(content)
+                      // Basic formatting 
                       .replace(/\n/g, '<br/>')
+                      // Headers and sections
+                      .replace(/# (.*)/g, '<h1 class="text-3xl font-extrabold my-6 text-gray-900">$1</h1>')
+                      .replace(/## (.*)/g, '<h2 class="text-2xl font-bold my-5 text-gray-800">$1</h2>')
+                      .replace(/### (.*)/g, '<h3 class="text-xl font-semibold my-4 text-gray-800">$1</h3>')
+                      .replace(/#### (.*)/g, '<h4 class="text-lg font-medium my-3 text-gray-700">$1</h4>')
                       .replace(/Heading: (.*)/g, '<h3 class="text-xl font-bold my-4">$1</h3>')
                       .replace(/Section: (.*)/g, '<h2 class="text-2xl font-bold my-4">$1</h2>')
                       .replace(/Subheading: (.*)/g, '<h4 class="text-lg font-semibold my-3">$1</h4>')
+                      // Page separators
+                      .replace(/---/g, '<hr class="my-6 border-t-2 border-gray-300" />')
                       .replace(/Page break/g, '<hr class="my-6 border-t-2 border-gray-300" />')
                       .replace(/Page separator/g, '<hr class="my-4 border-t border-gray-200" />')
-                      .replace(/Table:/g, '<div class="my-4 font-semibold">Table:</div>')
-                      .replace(/End table/g, '')
-                      .replace(/End translated table/g, '')
-                      .replace(/Row: /g, '<div class="grid grid-cols-6 gap-2 mb-1">')
-                      .replace(/\[(.*?)\] /g, '<div class="border border-gray-300 p-2 text-sm">$1</div>')
-                      .replace(/\n/g, '</div>')
+                      // Tables - completely new implementation with better rendering
+                      .replace(/\|\s+(.*?)\s+\|/g, function(match) {
+                        // Check if this is a table row
+                        if (match.includes('|')) {
+                          // Split the row into cells
+                          const cells = match.split('|').filter(cell => cell.trim() !== '');
+                          // Create a table row with the cells
+                          return '<div class="flex w-full border-b border-gray-200">' + 
+                            cells.map(cell => 
+                              `<div class="p-2 flex-1 border-r border-gray-200">${cell.trim()}</div>`
+                            ).join('') + 
+                            '</div>';
+                        }
+                        return match;
+                      })
+                      .replace(/Table:/g, '<div class="my-4 font-semibold border-b-2 border-gray-300 pb-1">Table:</div>' + 
+                        '<div class="border border-gray-300 rounded-md overflow-hidden my-2">')
+                      .replace(/End table/g, '</div>')
+                      .replace(/End translated table/g, '</div>')
                   }} />
                 </div>
               </div>

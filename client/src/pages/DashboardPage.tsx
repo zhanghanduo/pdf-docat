@@ -28,6 +28,7 @@ const DashboardPage: React.FC = () => {
   const [dualLanguage, setDualLanguage] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
   const [retryCount, setRetryCount] = useState<number>(0);
+  const [processingTime, setProcessingTime] = useState<number>(0);
   const { toast } = useToast();
 
   const handleFileSelected = useCallback((file: File) => {
@@ -79,6 +80,9 @@ const DashboardPage: React.FC = () => {
       }
       setErrorMessage(undefined);
       
+      // Start timing the processing
+      const startTime = performance.now();
+      
       // Prepare translation options
       const translationOpts = {
         enabled: translationEnabled,
@@ -93,13 +97,18 @@ const DashboardPage: React.FC = () => {
         translationOpts
       );
       
+      // Calculate total processing time
+      const endTime = performance.now();
+      const totalProcessingTime = endTime - startTime;
+      setProcessingTime(totalProcessingTime);
+      
       setExtractedContent(response.extractedContent);
       setFileAnnotations(response.fileAnnotations);
       setProcessingStatus("completed");
       
       toast({
         title: "Processing complete",
-        description: "Your PDF has been successfully processed",
+        description: `Your PDF has been successfully processed in ${(totalProcessingTime / 1000).toFixed(1)} seconds`,
       });
     } catch (error: any) {
       // Store the error message for display in the LoadingState component
@@ -124,6 +133,7 @@ const DashboardPage: React.FC = () => {
     setFileAnnotations(null);
     setErrorMessage(undefined);
     setRetryCount(0); // Reset retry count when starting over
+    setProcessingTime(0); // Reset processing time
   }, []);
 
   return (
@@ -216,6 +226,7 @@ const DashboardPage: React.FC = () => {
             content={extractedContent}
             fileName={selectedFile?.name || "document.pdf"}
             onProcessAnother={resetProcessing}
+            processingTime={processingTime}
           />
         )}
       </div>

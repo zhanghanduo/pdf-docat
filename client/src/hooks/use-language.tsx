@@ -148,6 +148,16 @@ const translations: Record<string, Record<string, string>> = {
     // Extract content
     'extracted_content': '提取的内容',
     'content_extracted': '从您的文档中提取的内容',
+    
+    // PDF Dropzone
+    'upload_pdf_document': '上传 PDF 文档',
+    'drag_drop_browse': '拖放文件至此处，或点击浏览文件',
+    'select_pdf_file': '选择 PDF 文件',
+    'pdf_file_size_limit': '支持最大 {0}MB 的 PDF 文件',
+    'invalid_file_type': '文件类型无效',
+    'please_upload_pdf': '请上传 PDF 文件。',
+    'file_too_large': '文件过大',
+    'file_size_exceeds': '文件超过最大大小 {0}MB。',
     'with_translation': '（带翻译）',
     'export_txt': '导出为 TXT',
     'export_md': '导出为 MD',

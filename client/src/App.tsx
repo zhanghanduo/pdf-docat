@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/LoginPage";
+import AuthPage from "@/pages/auth-page";
 import DashboardPage from "@/pages/DashboardPage";
 import HistoryPage from "@/pages/HistoryPage";
 import SettingsPage from "@/pages/SettingsPage";
@@ -20,8 +21,8 @@ const ProtectedRoute = ({ component: Component, adminOnly = false, ...rest }: an
 
   useEffect(() => {
     if (!token) {
-      // Redirect to login if not authenticated
-      setLocation("/login");
+      // Redirect to auth page if not authenticated
+      setLocation("/auth");
     } else if (adminOnly && !isAdmin) {
       // Redirect to dashboard if not admin but trying to access admin-only page
       setLocation("/dashboard");
@@ -53,10 +54,25 @@ const LoginRedirect = () => {
   return <LoginPage />;
 };
 
+// Auth redirect component
+const AuthRedirect = () => {
+  const [, setLocation] = useLocation();
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    if (token) {
+      setLocation("/dashboard");
+    }
+  }, [token, setLocation]);
+
+  return <AuthPage />;
+};
+
 function Router() {
   return (
     <Switch>
       <Route path="/login" component={LoginRedirect} />
+      <Route path="/auth" component={AuthRedirect} />
       <Route path="/dashboard">
         <ProtectedRoute component={DashboardPage} />
       </Route>

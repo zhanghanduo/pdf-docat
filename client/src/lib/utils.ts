@@ -115,104 +115,107 @@ export function exportAsText(content: ExtractedContent, filename: string) {
 
 // Format extracted content as markdown
 export function formatExtractedContentAsMarkdown(content: ExtractedContent): string {
-  let markdown = `Heading: ${content.title}\n\n`;
+  let markdown = `# ${content.title}\n\n`;
   
-  // Add metadata section
-  markdown += `Section: Document Information\n\n`;
-  markdown += `- Pages: ${content.pages}\n`;
-  markdown += `- Extraction Time: ${content.metadata.extractionTime}\n`;
-  markdown += `- Word Count: ${content.metadata.wordCount}\n`;
-  markdown += `- Confidence: ${(content.metadata.confidence * 100).toFixed(1)}%\n`;
+  // Add metadata section using proper markdown format
+  markdown += `## Document Information\n\n`;
+  markdown += `- **Pages:** ${content.pages}\n`;
+  markdown += `- **Extraction Time:** ${content.metadata.extractionTime}\n`;
+  markdown += `- **Word Count:** ${content.metadata.wordCount}\n`;
+  markdown += `- **Confidence:** ${(content.metadata.confidence * 100).toFixed(1)}%\n`;
   
   if (content.metadata.isTranslated) {
-    markdown += `- Translated: Yes\n`;
+    markdown += `- **Translated:** Yes\n`;
     if (content.metadata.targetLanguage) {
-      markdown += `- Target Language: ${content.metadata.targetLanguage}\n`;
+      markdown += `- **Target Language:** ${content.metadata.targetLanguage}\n`;
     }
   }
   
-  markdown += '\nSection: Content\n\n';
+  markdown += '\n## Content\n\n';
   
-  // Process each content item
+  // Process each content item with proper markdown formatting
   for (const item of content.content) {
     switch (item.type) {
       case 'heading':
-        markdown += `Heading: ${item.content}\n\n`;
+        // Use proper heading format based on content
+        if (item.content?.includes("Pages")) {
+          markdown += `### ${item.content}\n\n`;
+        } else if (item.content?.startsWith("Extracted Content")) {
+          markdown += `## ${item.content}\n\n`;
+        } else {
+          markdown += `### ${item.content}\n\n`;
+        }
+        
         if (item.translatedContent) {
-          markdown += `Subheading: Translation\n${item.translatedContent}\n\n`;
+          markdown += `*${item.translatedContent}*\n\n`;
         }
         break;
         
       case 'text':
         // Special case for page separator
         if (item.content === '---') {
-          markdown += `Page break\n\n`;
+          markdown += `---\n\n`;
         } else if (item.translatedContent) {
           markdown += `${item.content}\n\n`;
-          markdown += `**Translation:**\n\n${item.translatedContent}\n\n`;
-          markdown += `Page separator\n\n`;
+          markdown += `*Translation:*\n\n${item.translatedContent}\n\n`;
+          markdown += `---\n\n`;
         } else {
           markdown += `${item.content}\n\n`;
         }
         break;
         
       case 'code':
+        // Use proper code block format
         if (item.language) {
-          markdown += 'Code block ' + item.language + ':\n';
+          markdown += `\`\`\`${item.language}\n`;
         } else {
-          markdown += 'Code block:\n';
+          markdown += `\`\`\`\n`;
         }
-        markdown += item.content + '\nEnd code block\n\n';
+        markdown += `${item.content}\n\`\`\`\n\n`;
         
         if (item.translatedContent) {
-          markdown += '**Translation:**\n\n';
-          markdown += item.translatedContent + '\n\n';
-          markdown += `Page separator\n\n`;
+          markdown += `*Translation:*\n\n`;
+          markdown += `${item.translatedContent}\n\n`;
+          markdown += `---\n\n`;
         }
         break;
         
       case 'table':
         if (item.headers && item.rows) {
-          // Generate text table instead of markdown table
-          markdown += 'Table:\n\n';
+          // Generate proper markdown table
+          markdown += '### Table\n\n';
           
-          // Headers row
-          markdown += 'Row: ';
-          for (const header of item.headers) {
-            markdown += `[${header}] `;
-          }
-          markdown += '\n';
+          // Headers row with proper markdown table format
+          markdown += '| ' + item.headers.join(' | ') + ' |\n';
+          // Separator row
+          markdown += '| ' + item.headers.map(() => '---').join(' | ') + ' |\n';
           
           // Data rows
           for (const row of item.rows) {
-            markdown += 'Row: ';
-            for (const cell of row) {
-              markdown += `[${cell}] `;
-            }
-            markdown += '\n';
+            // Escape pipe characters in cells to prevent breaking the table
+            const escapedRow = row.map(cell => cell.replace(/\|/g, '\\|'));
+            markdown += '| ' + escapedRow.join(' | ') + ' |\n';
           }
-          markdown += '\nEnd table\n\n';
+          
+          markdown += '\n';
           
           // If we have translated table
           if (item.translatedHeaders && item.translatedRows) {
-            markdown += '**Translated Table:**\n\n';
+            markdown += '### Translated Table\n\n';
             
-            // Headers row
-            markdown += 'Row: ';
-            for (const header of item.translatedHeaders) {
-              markdown += `[${header}] `;
-            }
-            markdown += '\n';
+            // Headers row with proper markdown table format
+            markdown += '| ' + item.translatedHeaders.join(' | ') + ' |\n';
+            // Separator row
+            markdown += '| ' + item.translatedHeaders.map(() => '---').join(' | ') + ' |\n';
             
             // Data rows
             for (const row of item.translatedRows) {
-              markdown += 'Row: ';
-              for (const cell of row) {
-                markdown += `[${cell}] `;
-              }
-              markdown += '\n';
+              // Escape pipe characters in cells to prevent breaking the table
+              const escapedRow = row.map(cell => cell.replace(/\|/g, '\\|'));
+              markdown += '| ' + escapedRow.join(' | ') + ' |\n';
             }
-            markdown += '\nEnd translated table\n\n';
+            
+            markdown += '\n';
           }
         }
         break;

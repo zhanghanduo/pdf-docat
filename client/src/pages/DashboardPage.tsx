@@ -153,10 +153,10 @@ const DashboardPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-10 text-center">
           <h1 className="gradient-heading text-4xl font-bold mb-4">
-            {t("PDF Content Extraction")}
+            {t('pdf_extraction')}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {t("Upload your PDF to extract structured content using advanced AI technology.")}
+            {t('upload_description')}
           </p>
         </div>
 
@@ -166,10 +166,10 @@ const DashboardPage: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
               <div>
                 <h2 className="text-2xl font-semibold text-foreground">
-                  {t("Document Processing")}
+                  {t('document_processing')}
                 </h2>
                 <p className="mt-2 text-muted-foreground">
-                  {t("Upload a PDF file to extract text, tables, and structured content.")}
+                  {t('upload_instruction')}
                 </p>
               </div>
             </div>
@@ -190,7 +190,7 @@ const DashboardPage: React.FC = () => {
                 {/* Add an informative message about intelligent detection */}
                 <div className="mb-6 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md">
                   <p className="text-sm text-blue-700 dark:text-blue-300">
-                    <span className="font-medium">Smart Detection:</span> DocCat will automatically determine if your PDF contains scanned images or structured text and apply the optimal processing method.
+                    <span className="font-medium">{t('smart_detection')}:</span> {t('detection_description')}
                   </p>
                 </div>
 
@@ -213,7 +213,7 @@ const DashboardPage: React.FC = () => {
                         : "bg-gradient-to-r from-primary to-accent hover:shadow-lg hover:-translate-y-1"
                     }`}
                   >
-                    Process Document
+                    {t('process_document')}
                   </Button>
                 </div>
               </>

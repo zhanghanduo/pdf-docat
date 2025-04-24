@@ -33,8 +33,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
     localStorage.removeItem("user");
     queryClient.clear();
     toast({
-      title: "Logged out successfully",
-      description: "You have been logged out of your account",
+      title: t("Logged out successfully"),
+      description: t("You have been logged out of your account"),
     });
     setLocation("/login");
     if (onLogout) onLogout();

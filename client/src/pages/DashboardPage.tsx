@@ -63,16 +63,24 @@ const DashboardPage: React.FC = () => {
         processPDF();
       }
     }, 100);
-  }, [selectedFile, processingEngine]);
+  }, [selectedFile, processingEngine, translationEnabled, targetLanguage, dualLanguage]);
 
   const processPDF = async () => {
     try {
       if (!selectedFile) return;
       
+      // Prepare translation options
+      const translationOpts = {
+        enabled: translationEnabled,
+        targetLanguage: targetLanguage,
+        dualLanguage: dualLanguage
+      };
+      
       const response = await pdfApi.processPDF(
         selectedFile,
         processingEngine,
-        fileAnnotations || undefined
+        fileAnnotations || undefined,
+        translationOpts
       );
       
       setExtractedContent(response.extractedContent);

@@ -19,17 +19,34 @@ export async function processPDF(
   pdfBase64: string,
   fileName: string,
   engine: EngineType = 'mistral-ocr',
-  fileAnnotations?: string
+  fileAnnotations?: string,
+  translationOptions?: {
+    translateEnabled: boolean;
+    targetLanguage: string;
+    dualLanguage: boolean;
+  }
 ): Promise<{
   extractedContent: ExtractedContent;
   fileAnnotations: string;
 }> {
   try {
     // Prepare the message content
+    let promptText = 'Please extract all content from this PDF including text, tables, and structured data. Format tables properly and maintain the document structure. Also summarize any diagrams or images if present.';
+    
+    // Add translation instructions if enabled
+    if (translationOptions?.translateEnabled) {
+      const targetLang = translationOptions.targetLanguage.replace('-', ' ');
+      if (translationOptions.dualLanguage) {
+        promptText += ` After extracting the content, please translate it to ${targetLang} and provide both the original text and the translation side by side or in separate sections.`;
+      } else {
+        promptText += ` After extracting the content, please translate it to ${targetLang}.`;
+      }
+    }
+    
     let messageContent: any[] = [
       {
         type: 'text',
-        text: 'Please extract all content from this PDF including text, tables, and structured data. Format tables properly and maintain the document structure. Also summarize any diagrams or images if present.',
+        text: promptText,
       },
       {
         type: 'file',

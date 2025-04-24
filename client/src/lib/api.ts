@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { ApiResponse, LoginResponse, ProcessPDFResponse, ProcessingLogResponse, UserListResponse } from './types';
-import { EngineType } from '@shared/schema';
+import { EngineType, TargetLanguage } from '@shared/schema';
 
 // Create axios instance
 const api = axios.create({
@@ -45,13 +45,29 @@ export const userApi = {
 
 // PDF processing API
 export const pdfApi = {
-  processPDF: async (file: File, engine: EngineType, fileAnnotations?: string): Promise<ProcessPDFResponse> => {
+  processPDF: async (
+    file: File, 
+    engine: EngineType, 
+    fileAnnotations?: string,
+    translationOptions?: {
+      enabled: boolean;
+      targetLanguage: TargetLanguage;
+      dualLanguage: boolean;
+    }
+  ): Promise<ProcessPDFResponse> => {
     const formData = new FormData();
     formData.append('pdf', file);
     formData.append('engine', engine);
     
     if (fileAnnotations) {
       formData.append('fileAnnotations', fileAnnotations);
+    }
+    
+    // Add translation options if provided
+    if (translationOptions) {
+      formData.append('translateEnabled', String(translationOptions.enabled));
+      formData.append('targetLanguage', translationOptions.targetLanguage);
+      formData.append('dualLanguage', String(translationOptions.dualLanguage));
     }
     
     const response = await api.post<ProcessPDFResponse>('/process-pdf', formData, {

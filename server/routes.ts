@@ -83,9 +83,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User management routes (admin only)
   app.get("/api/users", verifyToken, isAdmin, async (req: Request, res: Response) => {
     try {
-      // Get all users (we need to modify this for a real DB)
-      const users = Array.from((storage as MemStorage).users.values())
-        .map(({ password, ...user }) => user); // Remove password from response
+      // Get all users (for a real DB implementation this would use a proper query)
+      // We're using a type assertion here because we know the implementation details of our MemStorage
+      const users = Array.from((storage as any).users.values())
+        .map((user: any) => {
+          // Remove password from response
+          const { password, ...userData } = user;
+          return userData;
+        });
       
       return res.status(200).json(users);
     } catch (error) {
@@ -144,6 +149,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get file annotations from request (if any)
         const fileAnnotations = req.body.fileAnnotations;
         
+        // Get translation options if provided
+        const translateEnabled = req.body.translateEnabled === 'true';
+        const targetLanguage = req.body.targetLanguage || 'simplified-chinese';
+        const dualLanguage = req.body.dualLanguage === 'true';
+        
         // Convert file to base64
         const pdfBase64 = req.file.buffer.toString("base64");
         
@@ -152,7 +162,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           pdfBase64,
           req.file.originalname,
           engine,
-          fileAnnotations
+          fileAnnotations,
+          {
+            translateEnabled,
+            targetLanguage,
+            dualLanguage
+          }
         );
         
         // Create processing log

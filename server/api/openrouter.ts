@@ -111,21 +111,28 @@ export async function processPDF(
     }
     
     // Prepare the message content
-    let promptText = 'Please extract all content from this PDF including text, tables, and structured data. ' +
-      'Please maintain the document structure exactly as presented in the PDF. ' +
-      'Count the total number of pages in the PDF document and include that in your response. ' +
-      'For tables: Preserve the exact structure with proper headers and row alignment. Tables should be formatted in a clean, consistent way that preserves all columns and rows. ' +
-      'Make sure to clearly separate different sections and maintain proper indentation for nested elements. ' +
-      'Break content by page, marking each page with a clear separator. ' +
-      'Also summarize any diagrams or images if present.';
+    let promptText = 'Extract only the raw content from this PDF document without any additional commentary or meta-descriptions. ' +
+      'Do not include phrases like "This PDF has X pages" or "Here is the extracted content" or any other remarks about the extraction process. ' +
+      'Present the content exactly as it appears in the document without any introductory text or explanations. ' +
+      'For tables: Extract only the table content itself with proper headers and row alignment. ' +
+      'Maintain the exact document structure and hierarchy including section headings and formatting. ' +
+      'Do not add any additional text that is not in the original document. ' +
+      'Separate different sections with line breaks to preserve the document flow. ' +
+      'For images or diagrams, provide only a brief description in [square brackets].';
     
     // Add translation instructions if enabled
     if (translationOptions?.translateEnabled) {
       const targetLang = translationOptions.targetLanguage.replace('-', ' ');
       if (translationOptions.dualLanguage) {
-        promptText += ` After extracting the content, please translate it to ${targetLang} and return the content in a structured JSON format where each section has both 'original' and 'translated' versions. The structure should be easy to parse programmatically. The format for each content block should be: {"type": "[content_type]", "content": "[original_text]", "translatedContent": "[translated_text]"}. For tables, include both the original and translated headers and rows. Make sure table format is preserved identically in both languages.`;
+        promptText += ` After extracting the content, translate it to ${targetLang} and return the content in this exact JSON format:
+[
+  {"type": "heading", "content": "Original heading", "translatedContent": "Translated heading"},
+  {"type": "text", "content": "Original paragraph text", "translatedContent": "Translated paragraph text"},
+  {"type": "table", "headers": ["Col1", "Col2"], "translatedHeaders": ["TransCol1", "TransCol2"], "rows": [["data1", "data2"]], "translatedRows": [["transData1", "transData2"]]}
+]
+Do not include any commentary or explanations outside of the JSON. The response should be valid JSON that can be directly parsed.`;
       } else {
-        promptText += ` After extracting the content, please translate it to ${targetLang}. Return the translated content only.`;
+        promptText += ` After extracting the content, translate it to ${targetLang}. Return only the translated content with no explanations or additional text. Preserve the exact document structure.`;
       }
     }
     
@@ -399,8 +406,27 @@ function parseExtractedContent(content: string, fileName: string): ExtractedCont
     if (contentItems.length === 0) {
       console.log('Falling back to text processing with enhanced table parser');
       
-      // Use our improved table parser to process the content
-      contentItems = parseTablesFromText(content, fileName);
+      // Clean up common LLM commentary phrases before parsing
+      const cleanedContent = content
+        // Remove page count statements
+        .replace(/This PDF (document |file )?has \d+ pages\.?/gi, '')
+        .replace(/This PDF (document |file )?contains \d+ pages\.?/gi, '')
+        .replace(/Total number of pages: \d+\.?/gi, '')
+        .replace(/共有\d+页\.?/g, '')
+        .replace(/这个PDF文件共有\d+页\.?/g, '')
+        // Remove extraction statements
+        .replace(/Here is the extracted content:?/gi, '')
+        .replace(/^I've extracted the content from/mi, '')
+        .replace(/^Below is the content extracted from/mi, '')
+        .replace(/^以下是(从|来自).*?(提取|抽取)(的内容|出来的内容)?[:：]?/mi, '')
+        .replace(/^以下是简体中文译文[:：]?/mi, '')
+        // Remove document type statements
+        .replace(/^The document appears to be/mi, '')
+        .replace(/^This is a/mi, '')
+        .trim();
+      
+      // Use our improved table parser to process the cleaned content
+      contentItems = parseTablesFromText(cleanedContent, fileName);
       
       console.log(`Table parser extracted ${contentItems.length} content items`);
     } else {

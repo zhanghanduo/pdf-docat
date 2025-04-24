@@ -43,7 +43,16 @@ const HistoryPage: React.FC = () => {
 
   const handleViewLog = async (logId: number) => {
     try {
+      // Show loading toast
+      const loadingToast = toast({
+        title: "Loading content",
+        description: "Retrieving document content...",
+      });
+      
       const log = await pdfApi.getProcessingLog(logId);
+      
+      // Dismiss loading toast
+      loadingToast.dismiss();
       
       if (log.extractedContent) {
         // Calculate processing time from metadata if available, or set a default
@@ -70,6 +79,7 @@ const HistoryPage: React.FC = () => {
         });
       }
     } catch (error) {
+      console.error("Error fetching log:", error);
       toast({
         title: "Error",
         description: "Failed to fetch log details",

@@ -74,7 +74,8 @@ const UsagePage: React.FC = () => {
 
   // Calculate usage percentage
   const usagePercentage = creditInfo ? Math.min(100, (creditInfo.used / creditInfo.limit) * 100) : 0;
-  const progressColorClass = getProgressColorClass(usagePercentage);
+  // Progress bar color based on usage percentage
+  const progressColor = getProgressColor(usagePercentage);
   
   return (
     <Layout>
@@ -96,13 +97,13 @@ const UsagePage: React.FC = () => {
                 <div className="space-y-4">
                   <div className="flex flex-col md:flex-row md:items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-500 mb-1">Your current tier:</p>
+                      <p className="text-sm text-gray-500 mb-1">{t('Your current tier')}:</p>
                       <p className={`text-xl font-bold ${getTierColorClass(creditInfo.tier)}`}>
-                        {creditInfo.tier.charAt(0).toUpperCase() + creditInfo.tier.slice(1)}
+                        {t(creditInfo.tier.charAt(0).toUpperCase() + creditInfo.tier.slice(1) + ' Tier')}
                       </p>
                     </div>
                     <div className="mt-3 md:mt-0">
-                      <p className="text-sm text-gray-500 mb-1">Credits used:</p>
+                      <p className="text-sm text-gray-500 mb-1">{t('Credits used')}:</p>
                       <p className="text-xl font-semibold">
                         {creditInfo.used} / {creditInfo.limit === Number.MAX_SAFE_INTEGER ? "∞" : creditInfo.limit}
                       </p>
@@ -117,7 +118,7 @@ const UsagePage: React.FC = () => {
                           className="h-3 rounded-full" 
                           style={{
                             width: `${usagePercentage}%`,
-                            backgroundColor: getProgressColor(usagePercentage)
+                            backgroundColor: progressColor
                           }}
                         />
                       </div>
@@ -125,24 +126,24 @@ const UsagePage: React.FC = () => {
                   )}
                   
                   <div className="mt-4 pt-4 border-t border-gray-100">
-                    <h3 className="font-medium mb-3">Processing Costs</h3>
+                    <h3 className="font-medium mb-3">{t('Processing Costs')}</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="bg-gray-50 p-3 rounded-md">
-                        <p className="font-medium">Scanned Documents</p>
-                        <p className="text-sm text-gray-600">5 credits per document</p>
+                        <p className="font-medium">{t('Scanned Documents')}</p>
+                        <p className="text-sm text-gray-600">5 {t('credits per document')}</p>
                       </div>
                       <div className="bg-gray-50 p-3 rounded-md">
-                        <p className="font-medium">Digital PDFs</p>
-                        <p className="text-sm text-gray-600">1 credit per document</p>
+                        <p className="font-medium">{t('Digital PDFs')}</p>
+                        <p className="text-sm text-gray-600">1 {t('credits per document')}</p>
                       </div>
                     </div>
                   </div>
                   
                   <div className="mt-4 pt-4 border-t border-gray-100">
-                    <h3 className="font-medium mb-3">Your Tier Benefits</h3>
+                    <h3 className="font-medium mb-3">{t('Your Tier Benefits')}</h3>
                     {creditInfo.tier === "free" && (
                       <div className="bg-blue-50 p-4 rounded-md">
-                        <h4 className="font-medium text-blue-700">Free Tier</h4>
+                        <h4 className="font-medium text-blue-700">{t('Free Tier')}</h4>
                         <ul className="mt-2 space-y-1 text-sm text-blue-800">
                           <li>• 500 credits per month</li>
                           <li>• Process approximately 100 digital PDFs</li>
@@ -153,7 +154,7 @@ const UsagePage: React.FC = () => {
                     
                     {creditInfo.tier === "plus" && (
                       <div className="bg-purple-50 p-4 rounded-md">
-                        <h4 className="font-medium text-purple-700">Plus Tier</h4>
+                        <h4 className="font-medium text-purple-700">{t('Plus Tier')}</h4>
                         <ul className="mt-2 space-y-1 text-sm text-purple-800">
                           <li>• 50,000 credits per month</li>
                           <li>• Process thousands of documents</li>
@@ -165,7 +166,7 @@ const UsagePage: React.FC = () => {
                     
                     {creditInfo.tier === "pro" && (
                       <div className="bg-amber-50 p-4 rounded-md">
-                        <h4 className="font-medium text-amber-700">Pro Tier</h4>
+                        <h4 className="font-medium text-amber-700">{t('Pro Tier')}</h4>
                         <ul className="mt-2 space-y-1 text-sm text-amber-800">
                           <li>• Unlimited credits</li>
                           <li>• No restrictions on document processing</li>
@@ -179,8 +180,8 @@ const UsagePage: React.FC = () => {
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
-                  <p>Unable to load credit information.</p>
-                  <p className="text-sm mt-2">Please try again later.</p>
+                  <p>{t('Unable to load credit information')}</p>
+                  <p className="text-sm mt-2">{t('Please try again later')}</p>
                 </div>
               )}
             </CardContent>
@@ -189,7 +190,7 @@ const UsagePage: React.FC = () => {
           {/* Credit Usage History Card */}
           <Card className="shadow-md border-0">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xl">Credit Usage History</CardTitle>
+              <CardTitle className="text-xl">{t('Credit Usage History')}</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoadingCredits ? (
@@ -198,17 +199,17 @@ const UsagePage: React.FC = () => {
                 </div>
               ) : !creditLogs || creditLogs.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  <p>No credit usage history yet.</p>
-                  <p className="text-sm mt-2">Process your first document to start tracking usage.</p>
+                  <p>{t('No credit usage history yet')}</p>
+                  <p className="text-sm mt-2">{t('Process your first document to start tracking usage')}</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead>
                       <tr>
-                        <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                        <th className="px-4 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Credits</th>
+                        <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('Date')}</th>
+                        <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('Description')}</th>
+                        <th className="px-4 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t('Credits')}</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">

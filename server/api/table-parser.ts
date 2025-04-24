@@ -23,6 +23,25 @@ type ContentItem = {
 function parseTablesFromText(content: string, fileName: string): ContentItem[] {
   const contentItems: ContentItem[] = [];
   
+  // Clean up common LLM commentary phrases before parsing
+  const cleanedContent = content
+    // Remove page count statements
+    .replace(/This PDF (document |file )?has \d+ pages\.?/gi, '')
+    .replace(/This PDF (document |file )?contains \d+ pages\.?/gi, '')
+    .replace(/Total number of pages: \d+\.?/gi, '')
+    .replace(/共有\d+页\.?/g, '')
+    .replace(/这个PDF文件共有\d+页\.?/g, '')
+    // Remove extraction statements
+    .replace(/Here is the extracted content:?/gi, '')
+    .replace(/^I've extracted the content from/mi, '')
+    .replace(/^Below is the content extracted from/mi, '')
+    .replace(/^以下是(从|来自).*?(提取|抽取)(的内容|出来的内容)?[:：]?/mi, '')
+    .replace(/^以下是简体中文译文[:：]?/mi, '')
+    // Remove document type statements
+    .replace(/^The document appears to be/mi, '')
+    .replace(/^This is a/mi, '')
+    .trim();
+  
   // Add initial welcome message
   contentItems.push({
     type: "heading",
@@ -34,8 +53,8 @@ function parseTablesFromText(content: string, fileName: string): ContentItem[] {
   const asciiTableRegex = /\+[-+]+\+/;
   const structuredListRegex = /^[\s]*([a-zA-Z0-9]+[\)\.]\s+|[-•*]\s+).+(\n[\s]*([a-zA-Z0-9]+[\)\.]\s+|[-•*]\s+).+)+/m;
   
-  const hasTable = markdownTableRegex.test(content) || asciiTableRegex.test(content);
-  const hasStructuredList = structuredListRegex.test(content);
+  const hasTable = markdownTableRegex.test(cleanedContent) || asciiTableRegex.test(cleanedContent);
+  const hasStructuredList = structuredListRegex.test(cleanedContent);
   
   console.log(`Content analysis: Tables detected: ${hasTable}, Structured lists detected: ${hasStructuredList}`);
   
@@ -45,13 +64,13 @@ function parseTablesFromText(content: string, fileName: string): ContentItem[] {
     
     // First, identify page breaks and split content by pages if possible
     const pageBreakPattern = /\n-{3,}|={3,}|\n\s*Page\s+\d+\s*\n|\n\s*\[\s*Page\s+\d+\s*\]/gi;
-    let pageChunks = content.split(pageBreakPattern);
+    let pageChunks = cleanedContent.split(pageBreakPattern);
     
     // If we couldn't detect page breaks or only have one chunk, try a different approach
     if (pageChunks.length === 1) {
       // Use regular expressions to identify potential section breaks
       const sectionBreakPattern = /\n\s*#{1,3}\s+|\n\s*\*{3,}\s*\n|\n\s*={3,}\s*\n|\n\s*-{3,}\s*\n/g;
-      pageChunks = content.split(sectionBreakPattern);
+      pageChunks = cleanedContent.split(sectionBreakPattern);
     }
     
     // Process each chunk (page or section)
@@ -294,7 +313,7 @@ function parseTablesFromText(content: string, fileName: string): ContentItem[] {
     }
   } else {
     // No tables or structured lists detected, split by headings instead
-    const lines = content.split('\n');
+    const lines = cleanedContent.split('\n');
     let currentSection = "";
     
     for (const line of lines) {

@@ -111,13 +111,14 @@ export async function processPDF(
     }
     
     // Prepare the message content
-    let promptText = 'Extract only the raw content from this PDF document without any additional commentary or meta-descriptions. ' +
-      'Do not include phrases like "This PDF has X pages" or "Here is the extracted content" or any other remarks about the extraction process. ' +
-      'Present the content exactly as it appears in the document without any introductory text or explanations. ' +
-      'For tables: Extract only the table content itself with proper headers and row alignment. ' +
-      'Maintain the exact document structure and hierarchy including section headings and formatting. ' +
-      'Do not add any additional text that is not in the original document. ' +
-      'Separate different sections with line breaks to preserve the document flow. ' +
+    let promptText = 'Extract the FULL and COMPLETE text content from this PDF document, including ALL paragraphs, ALL sections, and ALL pages. ' +
+      'I need 100% of the document content, not a summary. ' +
+      'Do not skip or abbreviate any sections. Include every single paragraph, heading, and detail from the original document. ' +
+      'Do not include any of your own commentary, summaries, or meta-descriptions. ' +
+      'Do not include phrases like "This PDF has X pages" or "Here is the extracted content". ' +
+      'For tables: Extract the complete table content with all headers and rows, preserving the exact structure. ' +
+      'Maintain the precise document structure including all section headings, sub-headings, and exact formatting. ' +
+      'Separate different sections with line breaks to preserve the document organization. ' +
       'For images or diagrams, provide only a brief description in [square brackets].';
     
     // Add translation instructions if enabled
@@ -217,7 +218,7 @@ Do not include any commentary or explanations outside of the JSON. The response 
             content: messageContent,
           },
         ],
-        max_tokens: 4000, // Set a reasonable token limit
+        max_tokens: 8000, // Increased token limit for full text extraction
         temperature: 0.1, // Lower temperature for more consistent results
         plugins: plugins // Add back plugins parameter
       },

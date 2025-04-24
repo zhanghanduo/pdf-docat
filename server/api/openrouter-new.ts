@@ -67,13 +67,15 @@ export async function processPDF(
     }
     
     // Prepare the message content
-    let promptText = 'Please extract all content from this PDF including text, tables, and structured data. ' +
-      'Please maintain the document structure exactly as presented in the PDF. ' +
-      'Count the total number of pages in the PDF document and include that in your response. ' +
-      'For tables: Preserve the exact structure with proper headers and row alignment. Tables should be formatted in a clean, consistent way that preserves all columns and rows. ' +
-      'Make sure to clearly separate different sections and maintain proper indentation for nested elements. ' +
-      'Break content by page, marking each page with a clear separator. ' +
-      'Also summarize any diagrams or images if present.';
+    let promptText = 'Extract the FULL and COMPLETE text content from this PDF document, including ALL paragraphs, ALL sections, and ALL pages. ' +
+      'I need 100% of the document content, not a summary. ' +
+      'Do not skip or abbreviate any sections. Include every single paragraph, heading, and detail from the original document. ' +
+      'Do not include any of your own commentary, summaries, or meta-descriptions. ' +
+      'Do not include phrases like "This PDF has X pages" or "Here is the extracted content". ' +
+      'For tables: Extract the complete table content with all headers and rows, preserving the exact structure. ' +
+      'Maintain the precise document structure including all section headings, sub-headings, and exact formatting. ' +
+      'Separate different sections with line breaks to preserve the document organization. ' +
+      'For images or diagrams, provide only a brief description in [square brackets].';
     
     // Add translation instructions if enabled
     if (translationOptions?.translateEnabled) {
@@ -166,7 +168,7 @@ export async function processPDF(
             content: messageContent,
           },
         ],
-        max_tokens: 4000, // Set a reasonable token limit
+        max_tokens: 8000, // Increased token limit for full text extraction
         temperature: 0.1, // Lower temperature for more consistent results
         plugins: plugins // Add back plugins parameter
       },

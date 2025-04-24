@@ -5,6 +5,11 @@ import {
   processingLogs,
   type ProcessingLog,
   type InsertProcessingLog,
+  creditLogs,
+  insertCreditLogSchema,
+  USER_TIERS,
+  TIER_CREDITS,
+  type UserTier
 } from "@shared/schema";
 
 // Storage interface
@@ -14,6 +19,13 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserLastActive(id: number): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
+  updateUserTier(id: number, tier: UserTier): Promise<User | undefined>;
+  
+  // Credit management
+  getUserCredits(userId: number): Promise<{ used: number, limit: number }>;
+  useCredits(userId: number, amount: number, documentId?: number, description?: string): Promise<boolean>;
+  getCreditLogs(userId: number, limit?: number, offset?: number): Promise<any[]>;
   
   // Processing logs methods
   createProcessingLog(log: InsertProcessingLog): Promise<ProcessingLog>;
@@ -27,20 +39,26 @@ export interface IStorage {
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private processingLogs: Map<number, ProcessingLog>;
+  private creditLogs: Map<number, any>;
   private currentUserId: number;
   private currentLogId: number;
+  private currentCreditLogId: number;
 
   constructor() {
     this.users = new Map();
     this.processingLogs = new Map();
+    this.creditLogs = new Map();
     this.currentUserId = 1;
     this.currentLogId = 1;
+    this.currentCreditLogId = 1;
     
     // Add default admin and user accounts
     this.createUser({
       email: "admin_handuo",
       password: "Christlurker2",
       role: "admin",
+      tier: USER_TIERS.PRO,
+      creditsLimit: TIER_CREDITS.pro,
       isActive: true,
     });
     
@@ -48,6 +66,8 @@ export class MemStorage implements IStorage {
       email: "user@documind.ai",
       password: "user123",
       role: "user",
+      tier: USER_TIERS.FREE,
+      creditsLimit: TIER_CREDITS.free,
       isActive: true,
     });
   }

@@ -112,23 +112,25 @@ const DashboardPage: React.FC = () => {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-semibold text-gray-900">
-          PDF Content Extraction
-        </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Upload your PDF to extract structured content using AI.
-        </p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-10 text-center">
+          <h1 className="gradient-heading text-4xl font-bold mb-4">
+            PDF Content Extraction
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Upload your PDF to extract structured content using advanced AI technology.
+          </p>
+        </div>
 
         {/* Main processing card */}
-        <Card className="mt-8">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-center mb-5">
+        <Card className="dashboard-card mt-8 border-0 shadow-md bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
+          <CardContent className="p-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
               <div>
-                <h3 className="text-lg leading-6 font-medium text-gray-900">
+                <h2 className="text-2xl font-semibold text-foreground">
                   Document Processing
-                </h3>
-                <p className="mt-1 max-w-2xl text-sm text-gray-500">
+                </h2>
+                <p className="mt-2 text-muted-foreground">
                   Upload a PDF file to extract text, tables, and structured content.
                 </p>
               </div>
@@ -155,11 +157,15 @@ const DashboardPage: React.FC = () => {
                   onDualLanguageChange={setDualLanguage}
                 />
 
-                <div className="mt-6">
+                <div className="mt-10 flex justify-center">
                   <Button
                     onClick={processFile}
                     disabled={!selectedFile}
-                    className={!selectedFile ? "bg-gray-300 cursor-not-allowed" : ""}
+                    className={`text-lg px-8 py-6 rounded-xl font-medium transition-all shadow-md ${
+                      !selectedFile 
+                        ? "bg-gray-300 cursor-not-allowed" 
+                        : "bg-gradient-to-r from-primary to-accent hover:shadow-lg hover:-translate-y-1"
+                    }`}
                   >
                     Process Document
                   </Button>

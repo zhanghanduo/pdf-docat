@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, LogOut, FileText, History, Settings, Cat, Globe } from "lucide-react";
+import { Menu, X, LogOut, FileText, History, Settings, Cat, Globe, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -79,6 +79,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
               >
                 <History className="w-4 h-4" />
                 {t('history')}
+              </button>
+              <button 
+                onClick={() => setLocation("/usage")} 
+                className={`nav-item ${location === "/usage" ? "active" : ""}`}
+              >
+                <CreditCard className="w-4 h-4" />
+                {t('usage')}
               </button>
               {isAdmin && (
                 <button 
@@ -163,6 +170,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
               }}
             >
               {t('history')}
+            </button>
+            <button
+              className={`block w-full text-left pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
+                location === "/usage"
+                  ? "border-primary text-primary bg-primary-50"
+                  : "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
+              }`}
+              onClick={() => {
+                setLocation("/usage");
+                setShowMobileMenu(false);
+              }}
+            >
+              {t('usage')}
             </button>
             {isAdmin && (
               <button

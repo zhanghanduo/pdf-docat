@@ -12,6 +12,7 @@ import AuthPage from "@/pages/auth-page";
 import DashboardPage from "@/pages/DashboardPage";
 import HistoryPage from "@/pages/HistoryPage";
 import SettingsPage from "@/pages/SettingsPage";
+import UsagePage from "@/pages/UsagePage";
 
 // Protected route component
 const ProtectedRoute = ({ component: Component, adminOnly = false, ...rest }: any) => {
@@ -95,6 +96,9 @@ function Router() {
       </Route>
       <Route path="/history">
         <ProtectedRoute component={HistoryPage} />
+      </Route>
+      <Route path="/usage">
+        <ProtectedRoute component={UsagePage} />
       </Route>
       <Route path="/settings">
         <ProtectedRoute component={SettingsPage} adminOnly={true} />

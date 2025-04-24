@@ -111,6 +111,109 @@ export function exportAsText(content: ExtractedContent, filename: string) {
   }, 100);
 }
 
+// Format extracted content as markdown
+export function formatExtractedContentAsMarkdown(content: ExtractedContent): string {
+  let markdown = `# ${content.title}\n\n`;
+  
+  // Add metadata section
+  markdown += `## Document Information\n\n`;
+  markdown += `- Pages: ${content.pages}\n`;
+  markdown += `- Extraction Time: ${content.metadata.extractionTime}\n`;
+  markdown += `- Word Count: ${content.metadata.wordCount}\n`;
+  markdown += `- Confidence: ${(content.metadata.confidence * 100).toFixed(1)}%\n`;
+  
+  if (content.metadata.isTranslated) {
+    markdown += `- Translated: Yes\n`;
+    if (content.metadata.targetLanguage) {
+      markdown += `- Target Language: ${content.metadata.targetLanguage}\n`;
+    }
+  }
+  
+  markdown += '\n## Content\n\n';
+  
+  // Process each content item
+  for (const item of content.content) {
+    switch (item.type) {
+      case 'heading':
+        markdown += `### ${item.content}\n\n`;
+        if (item.translatedContent) {
+          markdown += `#### Translation\n${item.translatedContent}\n\n`;
+        }
+        break;
+        
+      case 'text':
+        if (item.translatedContent) {
+          markdown += `${item.content}\n\n`;
+          markdown += `**Translation:**\n\n${item.translatedContent}\n\n`;
+          markdown += `---\n\n`;
+        } else {
+          markdown += `${item.content}\n\n`;
+        }
+        break;
+        
+      case 'code':
+        if (item.language) {
+          markdown += '```' + item.language + '\n';
+        } else {
+          markdown += '```\n';
+        }
+        markdown += item.content + '\n```\n\n';
+        
+        if (item.translatedContent) {
+          markdown += '**Translation:**\n\n';
+          markdown += item.translatedContent + '\n\n';
+          markdown += `---\n\n`;
+        }
+        break;
+        
+      case 'table':
+        if (item.headers && item.rows) {
+          // Generate markdown table
+          markdown += '| ' + item.headers.join(' | ') + ' |\n';
+          markdown += '| ' + item.headers.map(() => '---').join(' | ') + ' |\n';
+          
+          for (const row of item.rows) {
+            markdown += '| ' + row.join(' | ') + ' |\n';
+          }
+          markdown += '\n';
+          
+          // If we have translated table
+          if (item.translatedHeaders && item.translatedRows) {
+            markdown += '**Translated Table:**\n\n';
+            markdown += '| ' + item.translatedHeaders.join(' | ') + ' |\n';
+            markdown += '| ' + item.translatedHeaders.map(() => '---').join(' | ') + ' |\n';
+            
+            for (const row of item.translatedRows) {
+              markdown += '| ' + row.join(' | ') + ' |\n';
+            }
+            markdown += '\n';
+          }
+        }
+        break;
+    }
+  }
+  
+  return markdown;
+}
+
+// Export content as markdown file
+export function exportAsMarkdown(content: ExtractedContent, filename: string) {
+  const markdown = formatExtractedContentAsMarkdown(content);
+  const blob = new Blob([markdown], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${filename.replace(/\.pdf$/i, '')}_extracted.md`;
+  document.body.appendChild(a);
+  a.click();
+  
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
+}
+
 // Export content as JSON file
 export function exportAsJson(content: ExtractedContent, filename: string) {
   const blob = new Blob([JSON.stringify(content, null, 2)], { type: 'application/json' });

@@ -53,6 +53,9 @@ export type EngineType = typeof engineTypes[number];
 export const processingStatus = ["idle", "uploading", "processing", "completed", "error"] as const;
 export type ProcessingStatus = typeof processingStatus[number];
 
+export const targetLanguages = ["english", "simplified-chinese", "traditional-chinese", "german", "japanese", "spanish", "french"] as const;
+export type TargetLanguage = typeof targetLanguages[number];
+
 export type ExtractedContent = {
   title: string;
   pages: number;

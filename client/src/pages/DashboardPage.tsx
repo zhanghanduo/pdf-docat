@@ -4,11 +4,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PDFDropzone } from "@/components/PDFDropzone";
 import { ProcessingOptions } from "@/components/ProcessingOptions";
+import { TranslationOptions } from "@/components/TranslationOptions";
 import { LoadingState } from "@/components/LoadingState";
 import { ExtractedContent } from "@/components/ExtractedContent";
 import { useToast } from "@/hooks/use-toast";
 import { pdfApi } from "@/lib/api";
-import { ProcessingStatus, EngineType, ExtractedContent as ExtractedContentType } from "@shared/schema";
+import { 
+  ProcessingStatus, 
+  EngineType, 
+  TargetLanguage,
+  ExtractedContent as ExtractedContentType 
+} from "@shared/schema";
 
 const DashboardPage: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -17,6 +23,9 @@ const DashboardPage: React.FC = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [extractedContent, setExtractedContent] = useState<ExtractedContentType | null>(null);
   const [fileAnnotations, setFileAnnotations] = useState<string | null>(null);
+  const [translationEnabled, setTranslationEnabled] = useState<boolean>(true);
+  const [targetLanguage, setTargetLanguage] = useState<TargetLanguage>("simplified-chinese");
+  const [dualLanguage, setDualLanguage] = useState<boolean>(false);
   const { toast } = useToast();
 
   const handleFileSelected = useCallback((file: File) => {
@@ -127,6 +136,15 @@ const DashboardPage: React.FC = () => {
                 <ProcessingOptions
                   engine={processingEngine}
                   onChange={handleEngineChange}
+                />
+
+                <TranslationOptions
+                  enabled={translationEnabled}
+                  onEnabledChange={setTranslationEnabled}
+                  targetLanguage={targetLanguage}
+                  onTargetLanguageChange={setTargetLanguage}
+                  dualLanguage={dualLanguage}
+                  onDualLanguageChange={setDualLanguage}
                 />
 
                 <div className="mt-6">

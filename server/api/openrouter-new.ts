@@ -444,8 +444,7 @@ function parseExtractedContent(content: string, fileName: string): ExtractedCont
         extractionTime: new Date().toISOString(),
         wordCount: 0,
         confidence: 0,
-        // Store error message in sourceLanguage field for now
-        sourceLanguage: `Error: ${error.message}`,
+        error: error.message,
       }
     };
   }

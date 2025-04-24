@@ -8,8 +8,20 @@
  * 3. Structured lists with proper indentation
  */
 
-function parseTablesFromText(content, fileName) {
-  const contentItems = [];
+// Import the types we need
+type ContentItem = {
+  type: "text" | "heading" | "code" | "table";
+  content?: string;
+  translatedContent?: string;
+  language?: string;
+  headers?: string[];
+  translatedHeaders?: string[];
+  rows?: string[][];
+  translatedRows?: string[][];
+};
+
+function parseTablesFromText(content: string, fileName: string): ContentItem[] {
+  const contentItems: ContentItem[] = [];
   
   // Add initial welcome message
   contentItems.push({
@@ -381,4 +393,4 @@ function parseTablesFromText(content, fileName) {
 }
 
 // Export the function for use in openrouter.ts
-module.exports = { parseTablesFromText };
+export { parseTablesFromText };

@@ -9,6 +9,12 @@ import { processPDF as processWithIterative } from "./api/openrouter-iterative";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import crypto from "crypto";
+
+// Function to calculate SHA-256 hash of a file
+function calculateFileHash(buffer: Buffer): string {
+  return crypto.createHash('sha256').update(buffer).digest('hex');
+}
 
 // Set up multer for file uploads
 const upload = multer({
@@ -295,6 +301,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Start timing for processing
         const startTime = Date.now();
         
+        // Calculate file hash for caching
+        const fileHash = calculateFileHash(req.file.buffer);
+        console.log(`File hash: ${fileHash}`);
+        
+        // Check if we already have this file in cache
+        const cachedLog = await storage.getProcessingLogByFileHash(fileHash);
+        
+        if (cachedLog && cachedLog.status === "completed") {
+          console.log(`Found cached result for file: ${req.file.originalname}`);
+          
+          // Calculate processing time (just the time to look up the cache)
+          const processingTime = Date.now() - startTime;
+          
+          // Log cache hit
+          logUserAction(req.user!.id, "PDF processing cache hit", {
+            fileName: req.file.originalname,
+            fileSize: req.file.size,
+            engine,
+            fileHash
+          });
+          
+          // Create a new log entry for this request but reference the cached content
+          const log = await storage.createProcessingLog({
+            userId: req.user!.id,
+            fileName: req.file.originalname,
+            fileSize: req.file.size,
+            fileHash: fileHash,
+            engine: engine,
+            status: "completed",
+            processingTime: processingTime,
+            extractedContent: cachedLog.extractedContent as any,
+            fileAnnotations: cachedLog.fileAnnotations as any,
+          });
+          
+          // Return the cached content
+          return res.status(200).json({
+            extractedContent: cachedLog.extractedContent,
+            fileAnnotations: cachedLog.fileAnnotations,
+            logId: log.id,
+            cached: true
+          });
+        }
+        
         // Convert file to base64
         const pdfBase64 = req.file.buffer.toString("base64");
         console.log("File converted to base64");
@@ -341,11 +390,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const processingTime = Date.now() - startTime;
         console.log(`PDF processed successfully in ${processingTime}ms`);
         
-        // Create processing log
+        // Create processing log with file hash
         const log = await storage.createProcessingLog({
           userId: req.user!.id,
           fileName: req.file.originalname,
           fileSize: req.file.size,
+          fileHash: fileHash, // Store the file hash for future cache lookups
           engine: engine,
           status: "completed",
           processingTime: processingTime,
@@ -372,10 +422,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create error log if possible
         if (req.file && req.user) {
           try {
+            // Calculate file hash for the error log
+            const fileHash = calculateFileHash(req.file.buffer);
+            
             await storage.createProcessingLog({
               userId: req.user.id,
               fileName: req.file.originalname,
               fileSize: req.file.size,
+              fileHash: fileHash,
               engine: req.body.engine || "mistral-ocr",
               status: "error",
               processingTime: null,

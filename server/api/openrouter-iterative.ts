@@ -455,7 +455,7 @@ async function processLargeDocument(
         });
         
         console.log(`Successfully processed chunk ${i+1}: pages ${chunk.start}-${chunk.end}`);
-      } catch (error) {
+      } catch (error: any) {
         console.error(`Error processing chunk ${i+1} (pages ${chunk.start}-${chunk.end}):`);
         console.error(error);
         
@@ -463,7 +463,7 @@ async function processLargeDocument(
         results.push({
           content: [{
             type: "text",
-            content: `[Error processing pages ${chunk.start}-${chunk.end}: ${error.message}]`
+            content: `[Error processing pages ${chunk.start}-${chunk.end}: ${error?.message || 'Unknown error'}]`
           }],
           pageRange: chunk
         });

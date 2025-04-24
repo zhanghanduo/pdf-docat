@@ -4,7 +4,8 @@ import { storage } from "./storage";
 import { verifyToken, isAdmin, generateToken } from "./middleware/auth";
 import { loggerMiddleware, logUserAction } from "./middleware/logger";
 import { loginSchema, insertUserSchema, insertProcessingLogSchema, engineTypes } from "@shared/schema";
-import { processPDF, estimatePdfPageCount } from "./api/openrouter";
+import { estimatePdfPageCount } from "./api/openrouter";
+import { processPDF as processWithIterative } from "./api/openrouter-iterative";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -319,18 +320,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
-        // Process the PDF with OpenRouter
-        console.log(`Calling OpenRouter API with engine: ${engine}`);
-        const { extractedContent, fileAnnotations: newFileAnnotations } = await processPDF(
+        // Process the PDF with the iterative processor
+        console.log(`Calling OpenRouter API with iterative processor, engine: ${engine}`);
+        
+        // Create translation options object if translation is enabled
+        const translationOptionsObj = translateEnabled 
+          ? { translateEnabled, targetLanguage, dualLanguage } 
+          : undefined;
+        
+        // Use the iterative processor for better handling of large documents
+        const { extractedContent, fileAnnotations: newFileAnnotations } = await processWithIterative(
           pdfBase64,
           req.file.originalname,
           engine,
-          fileAnnotations,
-          {
-            translateEnabled,
-            targetLanguage,
-            dualLanguage
-          }
+          translationOptionsObj,
+          fileAnnotations
         );
         
         // Calculate processing time

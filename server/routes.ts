@@ -3,8 +3,17 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { verifyToken, isAdmin, generateToken } from "./middleware/auth";
 import { loggerMiddleware, logUserAction } from "./middleware/logger";
-import { loginSchema, insertUserSchema, insertProcessingLogSchema, engineTypes } from "@shared/schema";
-import { estimatePdfPageCount } from "./api/openrouter";
+import { 
+  loginSchema, 
+  insertUserSchema, 
+  registrationSchema,
+  insertProcessingLogSchema, 
+  engineTypes,
+  USER_TIERS,
+  TIER_CREDITS,
+  CREDIT_COSTS
+} from "@shared/schema";
+import { estimatePdfPageCount, detectPdfType } from "./api/openrouter";
 import { processPDF as processWithIterative } from "./api/openrouter-iterative";
 import multer from "multer";
 import path from "path";
@@ -34,6 +43,57 @@ const upload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up logger middleware
   app.use(loggerMiddleware);
+
+  // Registration route
+  app.post("/api/auth/register", async (req: Request, res: Response) => {
+    try {
+      // Validate request body
+      const validatedData = registrationSchema.safeParse(req.body);
+      if (!validatedData.success) {
+        return res.status(400).json({ message: "Invalid registration data", errors: validatedData.error.errors });
+      }
+      
+      const { email, password, name, confirmPassword } = validatedData.data;
+      
+      // Check if email already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(409).json({ message: "Email already in use" });
+      }
+      
+      // Create new user with free tier by default
+      const newUser = await storage.createUser({
+        email,
+        password,
+        name,
+        role: "user",
+        tier: USER_TIERS.FREE,
+        creditsLimit: TIER_CREDITS.free,
+        creditsUsed: 0,
+        isActive: true
+      });
+      
+      // Generate JWT token
+      const token = generateToken({
+        id: newUser.id,
+        email: newUser.email,
+        role: newUser.role,
+      });
+      
+      // Log user registration
+      logUserAction(newUser.id, "User registered");
+      
+      // Return token and user data (excluding password)
+      const { password: pw, ...userData } = newUser;
+      return res.status(201).json({
+        token,
+        user: userData,
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      return res.status(500).json({ message: "Server error during registration" });
+    }
+  });
 
   // Authentication routes
   app.post("/api/auth/login", async (req: Request, res: Response) => {
@@ -79,6 +139,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: user.id,
           email: user.email,
           role: user.role,
+          tier: user.tier,
+          creditsUsed: user.creditsUsed,
+          creditsLimit: user.creditsLimit,
+          name: user.name
         },
       });
     } catch (error) {
@@ -174,6 +238,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedUser.isActive = req.body.isActive;
       }
       
+      if (req.body.tier) {
+        // Update tier and credit limit accordingly
+        const tier = req.body.tier;
+        if (Object.values(USER_TIERS).includes(tier)) {
+          updatedUser.tier = tier;
+          // Type assertion for proper access to the TIER_CREDITS object
+          updatedUser.creditsLimit = TIER_CREDITS[tier as keyof typeof TIER_CREDITS];
+        }
+      }
+      
+      if (req.body.creditsUsed !== undefined) {
+        updatedUser.creditsUsed = parseInt(req.body.creditsUsed);
+      }
+      
       // Update the user in storage
       // For a real implementation, you'd have a proper update method
       (storage as any).users.set(userId, updatedUser);
@@ -220,6 +298,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting user:", error);
       return res.status(500).json({ message: "Server error deleting user" });
+    }
+  });
+
+  // Credit management routes
+  app.get("/api/credits", verifyToken, async (req: Request, res: Response) => {
+    try {
+      const credits = await storage.getUserCredits(req.user!.id);
+      return res.status(200).json(credits);
+    } catch (error) {
+      console.error("Error fetching user credits:", error);
+      return res.status(500).json({ message: "Server error fetching credits" });
+    }
+  });
+
+  app.get("/api/credit-logs", verifyToken, async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const offset = parseInt(req.query.offset as string) || 0;
+      
+      const logs = await storage.getCreditLogs(req.user!.id, limit, offset);
+      return res.status(200).json(logs);
+    } catch (error) {
+      console.error("Error fetching credit logs:", error);
+      return res.status(500).json({ message: "Server error fetching credit logs" });
+    }
+  });
+
+  // Route to view user account information
+  app.get("/api/account", verifyToken, async (req: Request, res: Response) => {
+    try {
+      const user = await storage.getUser(req.user!.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Get user credits
+      const credits = await storage.getUserCredits(req.user!.id);
+      
+      // Get user's processing logs (recent ones)
+      const recentLogs = await storage.getProcessingLogsByUserId(req.user!.id, 5);
+      
+      // Get stats on logs
+      const totalLogs = await storage.getTotalProcessingLogs(req.user!.id);
+      
+      // Return account info excluding sensitive data
+      const { password, ...userData } = user;
+      return res.status(200).json({
+        user: userData,
+        credits,
+        stats: {
+          totalProcessedDocuments: totalLogs
+        },
+        recentLogs
+      });
+    } catch (error) {
+      console.error("Error fetching account info:", error);
+      return res.status(500).json({ message: "Server error fetching account info" });
     }
   });
 
@@ -366,6 +501,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
             error: "Page limit exceeded",
             pageCount: pageCount,
             maxPages: MAX_PAGE_COUNT
+          });
+        }
+        
+        // Check if user has enough credits
+        
+        // Determine if document is scanned or structured to calculate credits needed
+        console.log("Checking document type (scanned or structured)");
+        const documentType = await detectPdfType(pdfBase64);
+        
+        // Calculate credit cost
+        const creditCost = documentType === 'scanned' 
+          ? pageCount * CREDIT_COSTS.SCANNED 
+          : pageCount * CREDIT_COSTS.STRUCTURED;
+          
+        console.log(`Document type: ${documentType}, Pages: ${pageCount}, Credit cost: ${creditCost}`);
+        
+        // Check if user has enough credits
+        const hasEnoughCredits = await storage.useCredits(
+          req.user!.id, 
+          creditCost, 
+          undefined,
+          `Processing ${documentType} PDF: ${req.file.originalname} (${pageCount} pages)`
+        );
+        
+        if (!hasEnoughCredits) {
+          return res.status(403).json({
+            message: "Insufficient credits to process this document",
+            error: "Credit limit exceeded",
+            creditsNeeded: creditCost
           });
         }
         

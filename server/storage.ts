@@ -91,9 +91,14 @@ export class MemStorage implements IStorage {
       id,
       email: insertUser.email,
       password: insertUser.password,
+      name: insertUser.name || null,
       role: insertUser.role || "user", // Default to "user" if not provided
+      tier: insertUser.tier || USER_TIERS.FREE, // Default to free tier
+      creditsUsed: insertUser.creditsUsed || 0,
+      creditsLimit: insertUser.creditsLimit || TIER_CREDITS.free,
       isActive: insertUser.isActive ?? true, // Default to true if not provided
-      lastActive: now
+      lastActive: now,
+      createdAt: now
     };
     this.users.set(id, user);
     return user;
@@ -123,6 +128,7 @@ export class MemStorage implements IStorage {
       processingTime: insertLog.processingTime || null,
       extractedContent: insertLog.extractedContent || null,
       fileAnnotations: insertLog.fileAnnotations || null,
+      creditsUsed: insertLog.creditsUsed || null,
       timestamp: now,
     };
     this.processingLogs.set(id, log);
@@ -156,6 +162,88 @@ export class MemStorage implements IStorage {
       return Array.from(this.processingLogs.values()).filter(log => log.userId === userId).length;
     }
     return this.processingLogs.size;
+  }
+
+  // User tier and credit management methods
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async updateUserTier(id: number, tier: UserTier): Promise<User | undefined> {
+    const user = await this.getUser(id);
+    if (!user) return undefined;
+
+    user.tier = tier;
+    user.creditsLimit = TIER_CREDITS[tier];
+    this.users.set(id, user);
+    
+    return user;
+  }
+
+  async getUserCredits(userId: number): Promise<{ used: number, limit: number }> {
+    const user = await this.getUser(userId);
+    if (!user) {
+      return { used: 0, limit: 0 };
+    }
+    
+    return { 
+      used: user.creditsUsed || 0, 
+      limit: user.creditsLimit || TIER_CREDITS.free 
+    };
+  }
+
+  async useCredits(userId: number, amount: number, documentId?: number, description?: string): Promise<boolean> {
+    const user = await this.getUser(userId);
+    if (!user) return false;
+
+    // Pro users have unlimited credits
+    if (user.tier === USER_TIERS.PRO) {
+      // Still log the credit usage for tracking
+      this.logCreditUsage(userId, amount, documentId, description || 'Document processing');
+      return true;
+    }
+
+    // Check if user has enough credits
+    if (user.creditsUsed + amount > user.creditsLimit) {
+      return false;
+    }
+
+    // Update user credits
+    user.creditsUsed += amount;
+    this.users.set(user.id, user);
+
+    // Log the credit usage
+    this.logCreditUsage(userId, amount, documentId, description || 'Document processing');
+    
+    return true;
+  }
+
+  async getCreditLogs(userId: number, limit = 10, offset = 0): Promise<any[]> {
+    const logs = Array.from(this.creditLogs.values())
+      .filter(log => log.userId === userId)
+      .sort((a, b) => {
+        const timeA = a.timestamp ? a.timestamp.getTime() : 0;
+        const timeB = b.timestamp ? b.timestamp.getTime() : 0;
+        return timeB - timeA; // Sort by timestamp descending
+      });
+    
+    return logs.slice(offset, offset + limit);
+  }
+
+  private logCreditUsage(userId: number, amount: number, documentId?: number, description?: string): void {
+    const id = this.currentCreditLogId++;
+    const now = new Date();
+    
+    const log = {
+      id,
+      userId,
+      amount,
+      documentId: documentId || null,
+      description: description || 'Credit usage',
+      timestamp: now
+    };
+    
+    this.creditLogs.set(id, log);
   }
 }
 

@@ -29,6 +29,17 @@ export const authApi = {
     const response = await api.post<LoginResponse>('/auth/login', { email, password });
     return response.data;
   },
+  
+  register: async (name: string, email: string, password: string, confirmPassword: string): Promise<LoginResponse> => {
+    console.log('Registering with:', { name, email, password });
+    const response = await api.post<LoginResponse>('/auth/register', { 
+      name, 
+      email, 
+      password,
+      confirmPassword 
+    });
+    return response.data;
+  },
 };
 
 // User management API

@@ -81,7 +81,7 @@ export async function estimatePdfPageCount(pdfBase64: string): Promise<number> {
 }
 
 // Function to detect if a PDF likely contains scanned content
-async function detectPdfType(pdfBase64: string): Promise<'scanned' | 'structured'> {
+export async function detectPdfType(pdfBase64: string): Promise<'scanned' | 'structured'> {
   try {
     // Simple heuristic: Check for image markers in the PDF binary data
     // Common image markers in PDFs include /Image, /XObject, /JPXDecode, /DCTDecode

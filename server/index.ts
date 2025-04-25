@@ -42,9 +42,7 @@ app.use('/api', (req, res, next) => {
 }, createProxyMiddleware({
   target: 'http://localhost:8000',
   changeOrigin: true,
-  pathRewrite: {
-    '^/api': '/api/v1', // Rewrite path (Python backend expects /api/v1)
-  },
+  // Don't rewrite the path - FastAPI already expects /api/v1
   onProxyReq: (proxyReq, req) => {
     console.log(`Proxying ${req.method} ${req.url} to ${proxyReq.path}`);
   },

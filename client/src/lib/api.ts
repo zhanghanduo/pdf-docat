@@ -4,7 +4,7 @@ import { EngineType, TargetLanguage } from '@shared/schema';
 
 // Create axios instance
 const api = axios.create({
-  baseURL: '/', // Using relative paths with full API paths
+  baseURL: '/api/v1', // Match FastAPI routes prefix
   headers: {
     'Content-Type': 'application/json',
   },

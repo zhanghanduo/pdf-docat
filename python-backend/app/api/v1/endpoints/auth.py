@@ -26,41 +26,48 @@ def login(
     """
     # Special case for admin_handuo
     if form_data.username == "admin_handuo":
-        # Create a special user with admin privileges for this session
-        user = {
-            "id": 999,
-            "email": "admin_handuo@documind.ai",
-            "name": "Admin Handuo",
-            "role": "admin",
-            "tier": settings.USER_TIERS["PRO"],
-            "credits_used": 0,
-            "credits_limit": settings.TIER_CREDITS["pro"],
-            "is_active": True,
-            "last_active": datetime.utcnow(),
-            "created_at": datetime.utcnow()
-        }
-        
         # Verify the hardcoded password for this special case
         if form_data.password != "Christlurker2":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect username or password",
             )
-            
-        # Create a User object
-        from app.models.user import User
-        special_user = User(**user)
+        
+        # Check if the admin_handuo user exists in the database
+        admin_handuo = user_service.get_user_by_email(db, "admin_handuo@documind.ai")
+        
+        # If not, create it
+        if not admin_handuo:
+            from app.schemas.user import UserCreate
+            admin_user = UserCreate(
+                email="admin_handuo@documind.ai",
+                password="Christlurker2",
+                confirm_password="Christlurker2",
+                name="Admin Handuo",
+                role="admin",
+                tier=settings.USER_TIERS["PRO"],
+                credits_limit=settings.TIER_CREDITS["pro"],
+                is_active=True
+            )
+            admin_handuo = user_service.create_user(db, admin_user)
+            print(f"Created admin_handuo user in database")
+        
+        # Update last active timestamp
+        user_service.update_user_last_active(db, admin_handuo.id)
+        
+        # Log user login
+        log_user_action(db, admin_handuo.id, "Admin handuo logged in")
         
         # Create access token
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         token = create_access_token(
-            special_user.id, special_user.email, special_user.role, 
+            admin_handuo.id, admin_handuo.email, admin_handuo.role, 
             expires_delta=access_token_expires
         )
         
         return {
             "token": token,
-            "user": special_user
+            "user": admin_handuo
         }
     
     # Standard authentication for regular users

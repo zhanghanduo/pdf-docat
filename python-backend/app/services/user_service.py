@@ -72,11 +72,15 @@ def delete_user(db: Session, user_id: int) -> bool:
 
 
 def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
+    print(f"Attempting login with email/username: {email}")
     user = get_user_by_email(db, email)
     if not user:
+        print(f"User not found with email/username: {email}")
         return None
     if not verify_password(password, user.password):
+        print(f"Password verification failed for user: {email}")
         return None
+    print(f"Authentication successful for user: {email}")
     return user
 
 

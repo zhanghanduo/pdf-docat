@@ -36,13 +36,19 @@ try {
 }
 
 // Set up proxy to forward API requests to Python backend
-app.use('/api', createProxyMiddleware({
+app.use('/api', (req, res, next) => {
+  console.log(`Proxying request to: ${req.url}`);
+  next();
+}, createProxyMiddleware({
   target: 'http://localhost:8000',
   changeOrigin: true,
   pathRewrite: {
     '^/api': '/api/v1', // Rewrite path (Python backend expects /api/v1)
   },
-  onError: (err, req, res) => {
+  onProxyReq: (proxyReq, req) => {
+    console.log(`Proxying ${req.method} ${req.url} to ${proxyReq.path}`);
+  },
+  onError: (err: Error, req: any, res: any) => {
     console.error('Proxy error:', err);
     res.status(500).json({
       error: 'Python backend is not available',

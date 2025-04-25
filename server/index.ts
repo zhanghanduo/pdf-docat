@@ -40,9 +40,11 @@ app.use('/api', (req, res, next) => {
   console.log(`Proxying request to: ${req.url}`);
   next();
 }, createProxyMiddleware({
-  target: 'http://localhost:8000',
+  target: 'http://localhost:8000/api/v1',
   changeOrigin: true,
-  // Don't rewrite the path - FastAPI already expects /api/v1
+  pathRewrite: {
+    '^/api': '', // Remove /api prefix as the target already includes /api/v1
+  },
   onProxyReq: (proxyReq, req) => {
     console.log(`Proxying ${req.method} ${req.url} to ${proxyReq.path}`);
   },

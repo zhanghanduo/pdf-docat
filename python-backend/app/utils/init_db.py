@@ -32,7 +32,7 @@ def create_default_users(db: Session) -> None:
     Create default users if they don't exist
     """
     # Check if admin user exists
-    admin_email = "admin_handuo"
+    admin_email = "admin@documind.ai"
     admin = user_service.get_user_by_email(db, admin_email)
     
     if not admin:

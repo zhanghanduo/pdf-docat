@@ -31,12 +31,27 @@ export const authApi = {
     formData.append('username', email); // Backend expects username as the key
     formData.append('password', password);
     
-    const response = await api.post<LoginResponse>('/auth/login', formData, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+    try {
+      const response = await api.post<LoginResponse>('/auth/login', formData, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      });
+      
+      console.log('Login response:', response.data);
+      
+      // Store token in localStorage for global access
+      if (response.data && response.data.token) {
+        console.log('Saving auth token to localStorage');
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
       }
-    });
-    return response.data;
+      
+      return response.data;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
   },
 
   register: async (name: string, email: string, password: string, confirmPassword: string): Promise<LoginResponse> => {

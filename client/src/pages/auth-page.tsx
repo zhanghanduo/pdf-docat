@@ -32,23 +32,25 @@ const AuthPage: React.FC = () => {
 
   const onSubmit = async (values: FormValues) => {
     try {
+      // The token is already saved in localStorage inside the authApi.login method
       const response: LoginResponse = await authApi.login(values.email, values.password);
       
-      // Save token and user data to localStorage
-      localStorage.setItem("token", response.token);
-      localStorage.setItem("user", JSON.stringify(response.user));
+      // Log user data for debugging
+      console.log('Auth page - login successful, token:', response.token?.substring(0, 20) + '...');
+      console.log('Auth page - user data:', response.user);
       
       // Redirect to dashboard
-      navigate("/dashboard");
+      navigate("/");
       
       toast({
         title: "Login successful",
         description: "Welcome back!",
       });
     } catch (error: any) {
+      console.error('Auth page - login error:', error);
       toast({
         title: "Login failed",
-        description: error.response?.data?.message || "Invalid username or password.",
+        description: error.message || "Invalid username or password.",
         variant: "destructive",
       });
     }

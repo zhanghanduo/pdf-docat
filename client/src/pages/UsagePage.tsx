@@ -21,7 +21,9 @@ function formatDate(dateString: string): string {
 }
 
 // Helper to determine text color based on tier
-function getTierColorClass(tier: string): string {
+function getTierColorClass(tier?: string): string {
+  if (!tier) return "text-gray-600";
+  
   switch (tier.toLowerCase()) {
     case "free":
       return "text-blue-600";
@@ -99,7 +101,11 @@ const UsagePage: React.FC = () => {
                     <div>
                       <p className="text-sm text-gray-500 mb-1">{t('Your current tier')}:</p>
                       <p className={`text-xl font-bold ${getTierColorClass(creditInfo.tier)}`}>
-                        {t(creditInfo.tier.charAt(0).toUpperCase() + creditInfo.tier.slice(1) + ' Tier')}
+                        {t(creditInfo.tier ? 
+  (typeof creditInfo.tier === 'string' ? 
+    (creditInfo.tier.charAt(0).toUpperCase() + creditInfo.tier.slice(1) + ' Tier') : 
+    'Unknown Tier') : 
+  'Unknown Tier')}
                       </p>
                     </div>
                     <div className="mt-3 md:mt-0">
@@ -141,7 +147,7 @@ const UsagePage: React.FC = () => {
                   
                   <div className="mt-4 pt-4 border-t border-gray-100">
                     <h3 className="font-medium mb-3">{t('Your Tier Benefits')}</h3>
-                    {creditInfo.tier === "free" && (
+                    {creditInfo.tier && typeof creditInfo.tier === 'string' && creditInfo.tier.toLowerCase() === "free" && (
                       <div className="bg-blue-50 p-4 rounded-md">
                         <h4 className="font-medium text-blue-700">{t('Free Tier')}</h4>
                         <ul className="mt-2 space-y-1 text-sm text-blue-800">
@@ -152,7 +158,7 @@ const UsagePage: React.FC = () => {
                       </div>
                     )}
                     
-                    {creditInfo.tier === "plus" && (
+                    {creditInfo.tier && typeof creditInfo.tier === 'string' && creditInfo.tier.toLowerCase() === "plus" && (
                       <div className="bg-purple-50 p-4 rounded-md">
                         <h4 className="font-medium text-purple-700">{t('Plus Tier')}</h4>
                         <ul className="mt-2 space-y-1 text-sm text-purple-800">
@@ -164,7 +170,7 @@ const UsagePage: React.FC = () => {
                       </div>
                     )}
                     
-                    {creditInfo.tier === "pro" && (
+                    {creditInfo.tier && typeof creditInfo.tier === 'string' && creditInfo.tier.toLowerCase() === "pro" && (
                       <div className="bg-amber-50 p-4 rounded-md">
                         <h4 className="font-medium text-amber-700">{t('Pro Tier')}</h4>
                         <ul className="mt-2 space-y-1 text-sm text-amber-800">

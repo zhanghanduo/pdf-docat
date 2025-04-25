@@ -40,11 +40,23 @@ app.use('/api/v1', (req, res, next) => {
   console.log(`Proxying API request to: ${req.url}`);
   next();
 }, createProxyMiddleware({
-  target: 'http://localhost:8000',
+  target: 'http://0.0.0.0:8000',
   changeOrigin: true,
+  timeout: 30000, // 30 second timeout
+  proxyTimeout: 30000, // 30 second proxy timeout
   pathRewrite: {
     '^/api/v1': '/api/v1', // Don't rewrite, pass as is
   },
+  onError: (err, req, res) => {
+    console.error('Proxy error:', err);
+    res.writeHead(500, {
+      'Content-Type': 'application/json',
+    });
+    res.end(JSON.stringify({ 
+      message: 'Proxy error occurred',
+      error: err.message 
+    }));
+  }
 }));
 
 // Add a fallback for /v1 routes (frontend might still use them)

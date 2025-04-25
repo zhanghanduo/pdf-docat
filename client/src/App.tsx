@@ -104,7 +104,7 @@ function Router() {
         <ProtectedRoute component={SettingsPage} adminOnly={true} />
       </Route>
       <Route path="/">
-        <Redirect to="/dashboard" />
+        <Redirect to="/auth" />
       </Route>
       <Route component={NotFound} />
     </Switch>

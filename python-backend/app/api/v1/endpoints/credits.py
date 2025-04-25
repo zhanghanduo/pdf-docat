@@ -25,15 +25,21 @@ def read_credits(
 
 
 @router.get("/logs", response_model=List[CreditLog])
+@router.get("/credit-logs", response_model=List[CreditLog])  # Add alias to match frontend endpoint
 def read_credit_logs(
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_active_user),
     limit: int = 10,
     offset: int = 0,
+    page: int = 1,  # Add pagination parameter expected by frontend
 ) -> Any:
     """
     Get current user's credit logs.
+    Supports both offset/limit and page/limit pagination.
     """
+    # Convert page to offset if page parameter is used
+    if page > 1:
+        offset = (page - 1) * limit
     logs = credit_service.get_credit_logs(db, current_user.id, limit, offset)
     return logs
 

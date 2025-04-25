@@ -16,6 +16,7 @@ router = APIRouter()
 
 
 @router.post("/process")
+@router.post("/process-pdf")  # Add alias to match frontend endpoint
 async def process_pdf(
     *,
     db: Session = Depends(deps.get_db),
@@ -78,15 +79,21 @@ async def process_pdf(
 
 
 @router.get("/logs", response_model=List[ProcessingLogSchema])
+@router.get("/processing-logs", response_model=List[ProcessingLogSchema])  # Add alias to match frontend endpoint
 def read_processing_logs(
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_active_user),
     limit: int = 10,
     offset: int = 0,
+    page: int = 1,  # Add pagination parameter expected by frontend
 ) -> Any:
     """
     Get current user's processing logs.
+    Supports both offset/limit and page/limit pagination.
     """
+    # Convert page to offset if page parameter is used
+    if page > 1:
+        offset = (page - 1) * limit
     logs = db.query(ProcessingLog).filter(
         ProcessingLog.user_id == current_user.id
     ).order_by(
@@ -97,6 +104,7 @@ def read_processing_logs(
 
 
 @router.get("/logs/{log_id}", response_model=ProcessingLogSchema)
+@router.get("/processing-logs/{log_id}", response_model=ProcessingLogSchema)  # Add alias to match frontend endpoint
 def read_processing_log(
     *,
     db: Session = Depends(deps.get_db),

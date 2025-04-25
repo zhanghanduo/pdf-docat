@@ -13,6 +13,7 @@ import DashboardPage from "@/pages/DashboardPage";
 import HistoryPage from "@/pages/HistoryPage";
 import SettingsPage from "@/pages/SettingsPage";
 import UsagePage from "@/pages/UsagePage";
+import DebugAuth from "@/components/DebugAuth";
 
 // Protected route component
 const ProtectedRoute = ({ component: Component, adminOnly = false, ...rest }: any) => {
@@ -118,6 +119,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          {process.env.NODE_ENV !== 'production' && <DebugAuth />}
         </TooltipProvider>
       </LanguageProvider>
     </QueryClientProvider>

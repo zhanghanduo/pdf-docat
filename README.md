@@ -1,10 +1,11 @@
-# DocCat - PDF Content Extraction
+# PDF-Docat - PDF Content Extraction and Translation
 
-DocCat is a sophisticated PDF content extraction platform that leverages AI-powered OCR technology and intelligent document processing, with advanced rendering and user-friendly interfaces.
+PDF-Docat is a sophisticated PDF content extraction platform that leverages AI-powered OCR technology and intelligent document processing, with advanced rendering and user-friendly interfaces. It now features a Python backend with direct integration of PDFMathTranslate for improved structured PDF processing.
 
 ## Features
 
-- **AI-Powered OCR**: Leverages Mistral-OCR via OpenRouter API for advanced content extraction
+- **AI-Powered OCR**: Leverages Mistral-OCR via OpenRouter API for advanced content extraction of scanned PDFs
+- **PDFMathTranslate Integration**: Uses PDFMathTranslate and BabelDOC for structured PDF processing with math support
 - **Smart PDF Detection**: Automatically identifies scanned vs. structured PDFs and applies the optimal processing method
 - **Intelligent Table Detection**: Automatically identifies and extracts tables with proper formatting
 - **Translation Support**: Convert extracted content to multiple languages including Chinese, English, Japanese, and more
@@ -16,107 +17,111 @@ DocCat is a sophisticated PDF content extraction platform that leverages AI-powe
 ## Tech Stack
 
 - **Frontend**: React with TypeScript, TailwindCSS, Shadcn UI components
-- **Backend**: Node.js with Express
-- **Database**: PostgreSQL with Drizzle ORM
-- **API Integration**: OpenRouter for AI model access
+- **Backend**: Python with FastAPI (migrated from Node.js)
+- **Database**: PostgreSQL with SQLAlchemy ORM
+- **PDF Processing**: PDFMathTranslate and OpenRouter for AI model access
 - **Authentication**: JWT-based authentication with role-based access control
+- **API Documentation**: Automatic OpenAPI/Swagger documentation
 - **Containerization**: Docker and Docker Compose for easy deployment
 
 ## Prerequisites
 
-- Node.js 18+ 
-- PostgreSQL database
-- OpenRouter API key (for AI processing)
+- Python 3.8+ (for backend)
+- Node.js 18+ (for frontend)
+- PostgreSQL database (optional, SQLite can be used for development)
+- OpenRouter API key (for OCR processing)
+- Gemini API key (for translation services)
 
 ## Installation and Setup
 
-### Using Docker (Recommended)
+### Using Deployment Scripts (Recommended)
+
+We provide deployment scripts to simplify the setup process:
 
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/doccat.git
-cd doccat
+git clone https://github.com/yourusername/pdf-docat.git
+cd pdf-docat
 ```
 
-2. Create a `.env` file in the root directory with the following variables:
+2. Run the setup script:
 
+```bash
+./deployment_scripts/setup_all.sh
 ```
-# Database configuration
-DATABASE_URL=postgresql://postgres:postgres@db:5432/doccat
-PGHOST=db
-PGUSER=postgres
-PGPASSWORD=postgres
-PGDATABASE=doccat
-PGPORT=5432
+
+3. Edit the configuration files:
+
+```bash
+# Edit backend configuration
+nano python-backend/.env
+
+# Edit frontend configuration
+nano client/.env
+```
+
+4. Start the application:
+
+```bash
+# Start the backend
+cd python-backend
+source python_env/bin/activate
+python run.py
+
+# In another terminal, start the frontend
+cd client
+npm run dev
+```
+
+5. Access the application at [http://localhost:5173](http://localhost:5173) and the API documentation at [http://localhost:8000/docs](http://localhost:8000/docs)
+
+### Using Docker (Alternative)
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/yourusername/pdf-docat.git
+cd pdf-docat
+```
+
+2. Create a `.env` file in the python-backend directory:
+
+```env
+# API Configuration
+PROJECT_NAME=PDF-Docat
+SECRET_KEY=your-secret-key-here
+ACCESS_TOKEN_EXPIRE_MINUTES=10080
+
+# CORS
+BACKEND_CORS_ORIGINS=["http://localhost:3000", "http://localhost:8000", "http://localhost:5173"]
+
+# Database
+POSTGRES_SERVER=db
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=pdf_docat
 
 # API Keys
 OPENROUTER_API_KEY=your_openrouter_api_key
-
-# JWT Secret
-JWT_SECRET=your_secret_key
-
-# Rate limiting (optional, defaults shown)
-RATE_LIMIT_GENERAL=100         # General API requests per 15 minutes
-RATE_LIMIT_PDF_PROCESSING=10   # PDF processing requests per hour
-RATE_LIMIT_DAILY=20            # PDFs per day per user
+GEMINI_API_KEY=your_gemini_api_key
 ```
 
 3. Build and start the containers:
 
 ```bash
+cd python-backend
 docker-compose up -d
 ```
 
-4. Access the application at http://localhost:3000
-
-### Manual Installation
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/yourusername/doccat.git
-cd doccat
-```
-
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-3. Create a PostgreSQL database and update the `.env` file with your database connection details:
-
-```
-DATABASE_URL=postgresql://username:password@localhost:5432/doccat
-PGHOST=localhost
-PGUSER=username
-PGPASSWORD=password
-PGDATABASE=doccat
-PGPORT=5432
-OPENROUTER_API_KEY=your_openrouter_api_key
-JWT_SECRET=your_secret_key
-```
-
-4. Push the database schema:
-
-```bash
-npm run db:push
-```
-
-5. Start the development server:
-
-```bash
-npm run dev
-```
-
-6. Access the application at http://localhost:3000
+4. Access the application API at [http://localhost:8000](http://localhost:8000) and the API documentation at [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ## User Guide
 
 ### Authentication
 
 The system comes with a predefined admin user:
+
 - Username: admin_handuo
 - Password: Christlurker2
 
@@ -139,45 +144,51 @@ New users must be created by an admin through the user management interface.
 
 ## Docker Compose Configuration
 
-The included `docker-compose.yml` file sets up:
+The included `docker-compose.yml` file in the python-backend directory sets up:
 
-1. A Node.js application container
+1. A Python FastAPI application container
 2. A PostgreSQL database container
 3. Proper networking between containers
 4. Volume mapping for persistent data storage
 
-## Development 
+## Development
 
 ### Project Structure
 
-```
-doccat/
-├── client/                  # Frontend React application
+```plaintext
+pdf-docat/
+├── client/                     # Frontend React application
 │   ├── src/
-│   │   ├── components/      # UI components
-│   │   ├── hooks/           # React hooks
-│   │   ├── lib/             # Utility functions
-│   │   ├── pages/           # Application pages
-│   │   └── App.tsx          # Main application component
-├── server/                  # Backend Express server
-│   ├── api/                 # API implementations
-│   ├── middleware/          # Express middleware
-│   ├── index.ts             # Server entry point
-│   └── routes.ts            # API route definitions
-├── shared/                  # Shared code between client and server
-│   └── schema.ts            # Database schema definitions
-└── docker-compose.yml       # Docker Compose configuration
+│   │   ├── components/         # UI components
+│   │   ├── hooks/              # React hooks
+│   │   ├── lib/                # Utility functions
+│   │   ├── pages/              # Application pages
+│   │   └── App.tsx             # Main application component
+├── python-backend/             # Python FastAPI backend
+│   ├── app/
+│   │   ├── api/                # API endpoints
+│   │   ├── core/               # Core functionality
+│   │   ├── models/             # SQLAlchemy models
+│   │   ├── schemas/            # Pydantic schemas
+│   │   ├── services/           # Business logic
+│   │   └── utils/              # Utility functions
+│   ├── main.py                 # Application entry point
+│   └── docker-compose.yml      # Docker Compose configuration
+├── deployment_scripts/         # Deployment and setup scripts
+└── legacy_backup/              # Backup of the original Node.js backend
 ```
 
 ### Database Migrations
 
-The project uses Drizzle ORM for database access. To update the database schema:
+The project uses SQLAlchemy ORM for database access. To update the database schema:
 
-1. Modify the schema definitions in `shared/schema.ts`
-2. Run the schema push command:
+1. Modify the SQLAlchemy models in `python-backend/app/models/`
+2. Use Alembic to generate and apply migrations:
 
 ```bash
-npm run db:push
+cd python-backend
+alembic revision --autogenerate -m "Description of changes"
+alembic upgrade head
 ```
 
 ## License
@@ -187,6 +198,9 @@ MIT
 ## Acknowledgements
 
 - OpenRouter for AI model access
+- Gemini for translation services
+- PDFMathTranslate for structured PDF processing
+- FastAPI for the Python backend framework
+- SQLAlchemy for database ORM
 - Shadcn UI for component library
-- Drizzle ORM for database access
 - All the open source libraries that made this project possible

@@ -85,5 +85,17 @@ export interface CreditLogResponse {
   };
 }
 
+// Settings types
+export interface Setting {
+  id: number;
+  key: string;
+  value: string;
+  description: string | null;
+  updatedAt: string;
+  masked?: boolean;
+}
+
+export type SettingsResponse = Setting[];
+
 // Navigation types
 export type Page = 'login' | 'dashboard' | 'history' | 'settings';

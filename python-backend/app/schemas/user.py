@@ -1,0 +1,72 @@
+from typing import Optional
+from datetime import datetime
+from pydantic import BaseModel, EmailStr, validator, Field
+
+from app.core.config import settings
+
+
+# Shared properties
+class UserBase(BaseModel):
+    email: Optional[EmailStr] = None
+    name: Optional[str] = None
+    is_active: Optional[bool] = True
+    role: Optional[str] = "user"
+    tier: Optional[str] = settings.USER_TIERS["FREE"]
+    credits_used: Optional[int] = 0
+    credits_limit: Optional[int] = settings.TIER_CREDITS["free"]
+
+
+# Properties to receive via API on creation
+class UserCreate(UserBase):
+    email: EmailStr
+    password: str
+    confirm_password: str
+    
+    @validator('confirm_password')
+    def passwords_match(cls, v, values, **kwargs):
+        if 'password' in values and v != values['password']:
+            raise ValueError('Passwords do not match')
+        return v
+
+
+# Properties to receive via API on update
+class UserUpdate(UserBase):
+    password: Optional[str] = None
+
+
+# Properties shared by models stored in DB
+class UserInDBBase(UserBase):
+    id: int
+    email: EmailStr
+    role: str
+    tier: str
+    credits_used: int
+    credits_limit: int
+    is_active: bool
+    last_active: Optional[datetime] = None
+    created_at: datetime
+    
+    class Config:
+        orm_mode = True
+
+
+# Properties to return to client
+class User(UserInDBBase):
+    pass
+
+
+# Properties stored in DB
+class UserInDB(UserInDBBase):
+    password: str
+
+
+# Properties for user login
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+# Properties for user credits
+class UserCredits(BaseModel):
+    used: int
+    limit: int

@@ -36,14 +36,26 @@ try {
 }
 
 // Set up proxy to forward API requests to Python backend
-app.use('/api', (req, res, next) => {
-  console.log(`Proxying request to: ${req.url}`);
+app.use('/api/v1', (req, res, next) => {
+  console.log(`Proxying API request to: ${req.url}`);
   next();
 }, createProxyMiddleware({
   target: 'http://localhost:8000',
   changeOrigin: true,
   pathRewrite: {
-    '^/api': '/api/v1', // Rewrite /api to /api/v1
+    '^/api/v1': '/api/v1', // Don't rewrite, pass as is
+  },
+}));
+
+// Add a fallback for /v1 routes (frontend might still use them)
+app.use('/v1', (req, res, next) => {
+  console.log(`Proxying v1 fallback request to: ${req.url}`);
+  next();
+}, createProxyMiddleware({
+  target: 'http://localhost:8000',
+  changeOrigin: true,
+  pathRewrite: {
+    '^/v1': '/api/v1', // Rewrite /v1 to /api/v1
   },
   onProxyReq: (proxyReq, req: any) => {
     // Debugging proxy request

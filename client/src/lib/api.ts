@@ -4,10 +4,11 @@ import { EngineType, TargetLanguage } from '@shared/schema';
 
 // Create axios instance
 const api = axios.create({
-  baseURL: '/', // Don't add /api as we're using full paths with /api/v1/...
+  baseURL: '/', // Using relative paths with full API paths
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 seconds timeout
 });
 
 // Add auth token to requests
@@ -85,54 +86,54 @@ export const authApi = {
 // User management API
 export const userApi = {
   getUsers: async (): Promise<UserListResponse> => {
-    const response = await api.get<UserListResponse>('/users');
+    const response = await api.get<UserListResponse>('/api/v1/users');
     return response.data;
   },
 
   createUser: async (userData: { email: string; password: string; role: string; isActive: boolean }) => {
-    const response = await api.post('/users', userData);
+    const response = await api.post('/api/v1/users', userData);
     return response.data;
   },
 
   updateUser: async (userId: number, userData: { email?: string; password?: string; role?: string; isActive?: boolean }) => {
-    const response = await api.put(`/users/${userId}`, userData);
+    const response = await api.put(`/api/v1/users/${userId}`, userData);
     return response.data;
   },
 
   deleteUser: async (userId: number) => {
-    const response = await api.delete(`/users/${userId}`);
+    const response = await api.delete(`/api/v1/users/${userId}`);
     return response.data;
   },
 
   // Settings management
   getSettings: async () => {
-    const response = await api.get('/settings');
+    const response = await api.get('/api/v1/settings');
     return response.data;
   },
 
   getSetting: async (key: string) => {
-    const response = await api.get(`/settings/${key}`);
+    const response = await api.get(`/api/v1/settings/${key}`);
     return response.data;
   },
 
   updateSetting: async (settingData: { key: string; value: string; description?: string }) => {
-    const response = await api.post('/settings', settingData);
+    const response = await api.post('/api/v1/settings', settingData);
     return response.data;
   },
 
   // User account and credits
   getAccountInfo: async () => {
-    const response = await api.get('/account');
+    const response = await api.get('/api/v1/account');
     return response.data;
   },
 
   getCredits: async () => {
-    const response = await api.get('/credits');
+    const response = await api.get('/api/v1/credits');
     return response.data;
   },
 
   getCreditLogs: async (page = 1, limit = 10) => {
-    const response = await api.get(`/credit-logs?page=${page}&limit=${limit}`);
+    const response = await api.get(`/api/v1/credits/logs?page=${page}&limit=${limit}`);
     return response.data;
   },
 };
@@ -165,7 +166,7 @@ export const pdfApi = {
     }
 
     try {
-      const response = await api.post<ProcessPDFResponse>('/process-pdf', formData, {
+      const response = await api.post<ProcessPDFResponse>('/api/v1/pdf/process', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -192,12 +193,12 @@ export const pdfApi = {
   },
 
   getProcessingLogs: async (page = 1, limit = 10): Promise<ProcessingLogResponse> => {
-    const response = await api.get<ProcessingLogResponse>(`/processing-logs?page=${page}&limit=${limit}`);
+    const response = await api.get<ProcessingLogResponse>(`/api/v1/pdf/logs?page=${page}&limit=${limit}`);
     return response.data;
   },
 
   getProcessingLog: async (id: number) => {
-    const response = await api.get(`/processing-logs/${id}`);
+    const response = await api.get(`/api/v1/pdf/logs/${id}`);
     return response.data;
   },
 };

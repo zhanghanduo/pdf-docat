@@ -26,7 +26,16 @@ api.interceptors.request.use(
 export const authApi = {
   login: async (email: string, password: string): Promise<LoginResponse> => {
     console.log('Logging in with:', { email, password });
-    const response = await api.post<LoginResponse>('/auth/login', { email, password });
+    // Create form data to match OAuth2 requirements
+    const formData = new URLSearchParams();
+    formData.append('username', email); // Backend expects username as the key
+    formData.append('password', password);
+    
+    const response = await api.post<LoginResponse>('/auth/login', formData, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
     return response.data;
   },
 

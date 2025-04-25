@@ -39,9 +39,9 @@ def read_account_info(
     account_info = {
         "user": user_data,
         "credits": {
-            "used": credits.used,
-            "limit": credits.limit,
-            "available": credits.limit - credits.used
+            "used": credits.get("used", 0),
+            "limit": credits.get("limit", 0),
+            "available": credits.get("limit", 0) - credits.get("used", 0)
         }
     }
     

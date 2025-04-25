@@ -62,9 +62,9 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Node.js server is running' });
 });
 
-// Serve static files from client/dist if they exist
+// Serve static files from dist/public if they exist
 try {
-  const distPath = path.join(process.cwd(), 'client/dist');
+  const distPath = path.join(process.cwd(), 'dist/public');
   app.use(express.static(distPath));
   console.log(`Serving static files from ${distPath}`);
   

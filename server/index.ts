@@ -45,7 +45,7 @@ app.use('/api/v1', (req, res, next) => {
   timeout: 30000, // 30 second timeout
   proxyTimeout: 30000, // 30 second proxy timeout
   pathRewrite: {
-    '^/api/v1': '', // Remove /api/v1 prefix when forwarding to Python backend
+    '^/api/v1': '/api/v1', // Keep /api/v1 prefix when forwarding to Python backend
   },
   onError: (err, req, res) => {
     console.error('Proxy error:', err);

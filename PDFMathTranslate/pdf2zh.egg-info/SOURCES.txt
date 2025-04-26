@@ -1,0 +1,10 @@
+setup.py
+pdf2zh/__init__.py
+pdf2zh/config.py
+pdf2zh/high_level.py
+pdf2zh/translator.py
+pdf2zh.egg-info/PKG-INFO
+pdf2zh.egg-info/SOURCES.txt
+pdf2zh.egg-info/dependency_links.txt
+pdf2zh.egg-info/requires.txt
+pdf2zh.egg-info/top_level.txt

@@ -34,7 +34,7 @@ export const authApi = {
     
     try {
       // Path should match the Python FastAPI routes exactly - /api/v1/auth/login
-      const response = await api.post<LoginResponse>('/auth/login', formData, {
+      const response = await api.post<LoginResponse>('/api/v1/auth/login', formData, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         }

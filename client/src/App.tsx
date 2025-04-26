@@ -12,6 +12,8 @@ import HistoryPage from "@/pages/HistoryPage";
 import SettingsPage from "@/pages/SettingsPage";
 import UsagePage from "@/pages/UsagePage";
 import DebugAuth from "@/components/DebugAuth";
+import RegisterPage from "@/pages/register-page"; // Added import for RegisterPage
+
 
 // Protected route component
 const ProtectedRoute = ({ component: Component, adminOnly = false, ...rest }: any) => {
@@ -60,6 +62,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/auth" component={AuthRedirect} />
+      <Route path="/register" component={RegisterPage} /> {/* Added register route */}
       <Route path="/dashboard">
         <ProtectedRoute component={DashboardPage} />
       </Route>

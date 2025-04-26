@@ -3,8 +3,9 @@ import { ApiResponse, LoginResponse, ProcessPDFResponse, ProcessingLogResponse, 
 import { EngineType, TargetLanguage } from '@shared/schema';
 
 // Create axios instance
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 const api = axios.create({
-  baseURL: '/api/v1', // Match FastAPI routes prefix
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -31,24 +32,24 @@ export const authApi = {
     const formData = new URLSearchParams();
     formData.append('username', email); // Backend expects username as the key
     formData.append('password', password);
-    
+
     try {
-      // Path should match the Python FastAPI routes exactly - /api/v1/auth/login
-      const response = await api.post<LoginResponse>('/api/v1/auth/login', formData, {
+      // Path should match the Python FastAPI routes exactly
+      const response = await api.post<LoginResponse>('/auth/login', formData, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         }
       });
-      
+
       console.log('Login response:', response.data);
-      
+
       // Store token in localStorage for global access
       if (response.data && response.data.token) {
         console.log('Saving auth token to localStorage');
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
       }
-      
+
       return response.data;
     } catch (error) {
       console.error('Login error:', error);
@@ -59,22 +60,22 @@ export const authApi = {
   register: async (name: string, email: string, password: string, confirmPassword: string): Promise<LoginResponse> => {
     console.log('Registering with:', { name, email, password });
     try {
-      const response = await api.post<LoginResponse>('/api/v1/auth/register', {
+      const response = await api.post<LoginResponse>('/auth/register', {
         name,
         email,
         password,
         confirm_password: confirmPassword // Make sure field name matches backend expectations
       });
-      
+
       console.log('Register response:', response.data);
-      
+
       // Store token in localStorage for global access
       if (response.data && response.data.token) {
         console.log('Saving auth token to localStorage after registration');
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
       }
-      
+
       return response.data;
     } catch (error) {
       console.error('Registration error:', error);
@@ -86,54 +87,54 @@ export const authApi = {
 // User management API
 export const userApi = {
   getUsers: async (): Promise<UserListResponse> => {
-    const response = await api.get<UserListResponse>('/api/v1/users');
+    const response = await api.get<UserListResponse>('/users');
     return response.data;
   },
 
   createUser: async (userData: { email: string; password: string; role: string; isActive: boolean }) => {
-    const response = await api.post('/api/v1/users', userData);
+    const response = await api.post('/users', userData);
     return response.data;
   },
 
   updateUser: async (userId: number, userData: { email?: string; password?: string; role?: string; isActive?: boolean }) => {
-    const response = await api.put(`/api/v1/users/${userId}`, userData);
+    const response = await api.put(`/users/${userId}`, userData);
     return response.data;
   },
 
   deleteUser: async (userId: number) => {
-    const response = await api.delete(`/api/v1/users/${userId}`);
+    const response = await api.delete(`/users/${userId}`);
     return response.data;
   },
 
   // Settings management
   getSettings: async () => {
-    const response = await api.get('/api/v1/settings');
+    const response = await api.get('/settings');
     return response.data;
   },
 
   getSetting: async (key: string) => {
-    const response = await api.get(`/api/v1/settings/${key}`);
+    const response = await api.get(`/settings/${key}`);
     return response.data;
   },
 
   updateSetting: async (settingData: { key: string; value: string; description?: string }) => {
-    const response = await api.post('/api/v1/settings', settingData);
+    const response = await api.post('/settings', settingData);
     return response.data;
   },
 
   // User account and credits
   getAccountInfo: async () => {
-    const response = await api.get('/api/v1/account');
+    const response = await api.get('/account');
     return response.data;
   },
 
   getCredits: async () => {
-    const response = await api.get('/api/v1/credits');
+    const response = await api.get('/credits');
     return response.data;
   },
 
   getCreditLogs: async (page = 1, limit = 10) => {
-    const response = await api.get(`/api/v1/credits/logs?page=${page}&limit=${limit}`);
+    const response = await api.get(`/credits/logs?page=${page}&limit=${limit}`);
     return response.data;
   },
 };
@@ -151,22 +152,22 @@ export const pdfApi = {
     }
   ): Promise<ProcessPDFResponse> => {
     const formData = new FormData();
-    formData.append('pdf', file);
+    formData.append('file', file); // Changed from 'pdf' to 'file' to match backend
     formData.append('engine', engine);
 
     if (fileAnnotations) {
-      formData.append('fileAnnotations', fileAnnotations);
+      formData.append('file_annotations', fileAnnotations); // Changed from 'fileAnnotations' to 'file_annotations'
     }
 
     // Add translation options if provided
     if (translationOptions) {
-      formData.append('translateEnabled', String(translationOptions.enabled));
-      formData.append('targetLanguage', translationOptions.targetLanguage);
-      formData.append('dualLanguage', String(translationOptions.dualLanguage));
+      formData.append('translate_enabled', String(translationOptions.enabled)); // Changed from 'translateEnabled' to 'translate_enabled'
+      formData.append('target_language', translationOptions.targetLanguage); // Changed from 'targetLanguage' to 'target_language'
+      formData.append('dual_language', String(translationOptions.dualLanguage)); // Changed from 'dualLanguage' to 'dual_language'
     }
 
     try {
-      const response = await api.post<ProcessPDFResponse>('/api/v1/pdf/process', formData, {
+      const response = await api.post<ProcessPDFResponse>('/pdf/process', formData, { // Removed '/api/v1' prefix as it's already in the baseURL
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -193,12 +194,12 @@ export const pdfApi = {
   },
 
   getProcessingLogs: async (page = 1, limit = 10): Promise<ProcessingLogResponse> => {
-    const response = await api.get<ProcessingLogResponse>(`/api/v1/pdf/logs?page=${page}&limit=${limit}`);
+    const response = await api.get<ProcessingLogResponse>(`/pdf/logs?page=${page}&limit=${limit}`);
     return response.data;
   },
 
   getProcessingLog: async (id: number) => {
-    const response = await api.get(`/api/v1/pdf/logs/${id}`);
+    const response = await api.get(`/pdf/logs/${id}`);
     return response.data;
   },
 };

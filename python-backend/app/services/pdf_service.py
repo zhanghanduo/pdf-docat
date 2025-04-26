@@ -191,10 +191,18 @@ async def process_pdf(
         else:
             # Use OpenRouter for scanned PDFs (OCR)
             # This would be implemented separately
-            raise HTTPException(
-                status_code=501,
-                detail="OCR processing not implemented in this version"
+            logger.warning(f"OCR processing requested for file: {file.filename} but not yet implemented")
+
+            # Fallback to structured PDF processing with a warning
+            result = await process_structured_pdf(
+                file_content,
+                file.filename,
+                translation_options
             )
+
+            # Add a warning to the result
+            if "extracted_content" in result and "metadata" in result["extracted_content"]:
+                result["extracted_content"]["metadata"]["warning"] = "This appears to be a scanned document. OCR processing is not yet implemented, so the results may be limited."
 
         # Calculate processing time
         processing_time = int((datetime.now(datetime.timezone.utc) - start_time).total_seconds() * 1000)

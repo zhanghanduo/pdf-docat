@@ -59,6 +59,7 @@ export type ExtractedContent = {
     isTranslated?: boolean;
     sourceLanguage?: string;
     targetLanguage?: string;
+    warning?: string;
   };
 };
 

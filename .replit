@@ -8,8 +8,8 @@ packages = ["cargo", "libiconv", "libxcrypt", "rustc"]
 
 [deployment]
 deploymentTarget = "autoscale"
-build = ["sh", "-c", "cd client && npm install && npm run build"]
-run = ["sh", "-c", "cd python-backend && python start_server.py"]
+build = ["sh", "-c", "npm run build"]
+run = ["sh", "-c", "npm run start"]
 
 [workflows]
 runButton = "Start application"

@@ -1,6 +1,6 @@
 from typing import Optional
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, validator, Field
+from pydantic import BaseModel, EmailStr, Field, validator
 
 from app.core.config import settings
 
@@ -21,7 +21,7 @@ class UserCreate(UserBase):
     email: EmailStr
     password: str
     confirm_password: str
-    
+
     @validator('confirm_password')
     def passwords_match(cls, v, values, **kwargs):
         if 'password' in values and v != values['password']:
@@ -45,7 +45,7 @@ class UserInDBBase(UserBase):
     is_active: bool
     last_active: Optional[datetime] = None
     created_at: datetime
-    
+
     class Config:
         orm_mode = True
 

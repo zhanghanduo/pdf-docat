@@ -63,3 +63,4 @@ temp
 .replit
 replit.nix
 .upm
+.env

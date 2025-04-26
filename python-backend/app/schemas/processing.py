@@ -60,7 +60,7 @@ class ProcessingLogInDBBase(ProcessingLogBase):
     extracted_content: Optional[Dict[str, Any]] = None
     file_annotations: Optional[Dict[str, Any]] = None
     timestamp: datetime
-    
+
     class Config:
         orm_mode = True
 

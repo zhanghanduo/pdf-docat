@@ -21,7 +21,7 @@ class SettingUpdate(BaseModel):
 class SettingInDBBase(SettingBase):
     id: int
     updated_at: datetime
-    
+
     class Config:
         orm_mode = True
 

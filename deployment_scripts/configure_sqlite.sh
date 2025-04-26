@@ -39,16 +39,19 @@ def get_db() -> Generator:
         db.close()
 EOL
 
-# Create a backup of the original config.py file
-cp python-backend/app/core/config.py python-backend/app/core/config.py.bak
+# Create a backup of the original .env file
+cp python-backend/.env python-backend/.env.bak
 
-# Modify the config.py file to support SQLite
-sed -i 's/@validator("SQLALCHEMY_DATABASE_URI", pre=True)/# @validator("SQLALCHEMY_DATABASE_URI", pre=True)/g' python-backend/app/core/config.py
-sed -i 's/def assemble_db_connection(cls, v: Optional\[str\], values: Dict\[str, Any\]) -> Any:/# def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:/g' python-backend/app/core/config.py
-sed -i '/# def assemble_db_connection/,/)/s/^/# /' python-backend/app/core/config.py
+# Update the .env file to use SQLite
+sed -i 's/USE_SQLITE=.*/USE_SQLITE=True/g' python-backend/.env
+
+# If USE_SQLITE doesn't exist in the .env file, add it
+if ! grep -q "USE_SQLITE" python-backend/.env; then
+    echo "USE_SQLITE=True" >> python-backend/.env
+fi
 
 echo "Configuration complete!"
 echo "The backend will now use SQLite instead of PostgreSQL."
 echo "To revert to the original configuration, run:"
 echo "  cp python-backend/app/database.py.bak python-backend/app/database.py"
-echo "  cp python-backend/app/core/config.py.bak python-backend/app/core/config.py"
+echo "  cp python-backend/.env.bak python-backend/.env"

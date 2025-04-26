@@ -41,25 +41,32 @@ Updates the frontend to work with the new Python backend API.
 
 ## Usage Instructions
 
-1. **Initial Setup**:
+1. **Clone the Repository with Submodules**:
+   ```bash
+   git clone --recurse-submodules https://github.com/your-repo/pdf-docat.git
+   cd pdf-docat
+   ```
+   This will clone the main repository and the PDFMathTranslate submodule.
+
+2. **Initial Setup**:
    ```bash
    ./setup_all.sh
    ```
    This will set up both the backend and frontend. Make sure to edit the `.env` files afterward to add your API keys.
 
-2. **Production Deployment**:
+3. **Production Deployment**:
    ```bash
    ./deploy_production.sh
    ```
    This will deploy the application in production mode using Gunicorn.
 
-3. **Using SQLite for Development**:
+4. **Using SQLite for Development**:
    ```bash
    ./configure_sqlite.sh
    ```
    This will configure the backend to use SQLite instead of PostgreSQL, which is simpler for development.
 
-4. **Updating Frontend API**:
+5. **Updating Frontend API**:
    ```bash
    ./update_frontend_api.sh
    ```
@@ -73,9 +80,56 @@ After running the setup scripts, you'll need to edit the following configuration
    - Add your API keys for OpenRouter and Gemini
    - Configure database settings
    - Set a strong SECRET_KEY (generated automatically by setup_all.sh)
+   - Set `USE_SQLITE=True` if you want to use SQLite instead of PostgreSQL
 
 2. `client/.env` - Frontend configuration:
    - Set the backend API URL if it's different from the default
+
+## PDFMathTranslate Submodule
+
+The application uses PDFMathTranslate as a git submodule:
+
+- **Origin**: https://github.com/awwaawwa/PDFMathTranslate.git
+- **Upstream**: https://github.com/Byaidu/PDFMathTranslate.git
+
+To update the PDFMathTranslate submodule to the latest version:
+
+```bash
+cd PDFMathTranslate
+git fetch origin
+git checkout main
+git pull origin main
+cd ..
+git add PDFMathTranslate
+git commit -m "Update PDFMathTranslate submodule"
+```
+
+To sync with upstream changes:
+
+```bash
+cd PDFMathTranslate
+git fetch upstream
+git merge upstream/main
+cd ..
+git add PDFMathTranslate
+git commit -m "Sync PDFMathTranslate with upstream"
+```
+
+## Dependency Compatibility Notes
+
+The application has specific dependency version requirements to ensure compatibility:
+
+1. **Pydantic Version**: The backend uses Pydantic 1.10.8, which is compatible with FastAPI 0.88.0. Using newer versions of Pydantic (2.x) may cause compatibility issues.
+
+2. **PyMuPDF Import**: PyMuPDF is installed as the package `pymupdf` but imported as `fitz`. The setup script includes a compatibility layer to handle this difference.
+
+3. **PDFMathTranslate Dependencies**: The PDFMathTranslate package has specific dependency requirements. The setup script includes a wrapper module that gracefully handles import errors and provides fallback functionality.
+
+If you encounter dependency-related errors, try the following:
+
+1. Use the exact versions specified in `python-backend/requirements.txt`
+2. Check that the mock modules are properly created during setup
+3. Use the `start_server.py` script instead of `run.py` to start the server
 
 ## Production Deployment Notes
 

@@ -17,7 +17,7 @@ class CreditLogInDBBase(CreditLogBase):
     id: int
     user_id: int
     timestamp: datetime
-    
+
     class Config:
         orm_mode = True
 

@@ -1,4 +1,4 @@
-# Core dependencies with specific versions for compatibility
+# Core dependencies
 fastapi==0.88.0
 pydantic==1.10.8
 uvicorn==0.15.0
@@ -19,4 +19,5 @@ pymupdf==1.22.5
 tqdm==4.66.1
 tenacity==8.2.3
 numpy==1.26.0
+ollama==0.1.6
 httpx==0.25.2

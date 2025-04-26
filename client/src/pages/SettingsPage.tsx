@@ -14,6 +14,7 @@ import { formatRelativeTime } from "@/lib/utils";
 import { UserFormDialog } from "@/components/UserFormDialog";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
 import { Loader2, AlertTriangle } from "lucide-react";
+import ApiKeyStats from "@/components/ApiKeyStats";
 
 const SettingsPage: React.FC = () => {
   const [openRouterApiKey, setOpenRouterApiKey] = useState("••••••••••••••••••••••••••••••");
@@ -152,17 +153,27 @@ const SettingsPage: React.FC = () => {
   };
 
   const handleChangeGeminiApiKey = () => {
-    const newKey = prompt("Enter new Gemini API key:");
-    if (newKey) {
+    const newKeys = prompt("Enter Gemini API keys (separate multiple keys with commas):");
+    if (newKeys) {
       updateSettingMutation.mutate({
-        key: "GEMINI_API_KEY",
-        value: newKey,
-        description: "Gemini API key for translation services"
+        key: "GEMINI_API_KEY_POOL",
+        value: newKeys,
+        description: "Gemini API key pool for translation services"
       });
       setGeminiApiKey("••••••••••••••••••••••••••••••");
-      toast({
-        title: "API key updated",
-        description: "Your Gemini API key has been updated",
+
+      // Refresh API key pools
+      userApi.refreshApiKeys().then(() => {
+        toast({
+          title: "API key pool updated",
+          description: `Your Gemini API key pool has been updated with ${newKeys.split(',').length} keys`,
+        });
+      }).catch(error => {
+        toast({
+          title: "Error refreshing API keys",
+          description: error.message || "Failed to refresh API keys",
+          variant: "destructive",
+        });
       });
     }
   };
@@ -385,7 +396,7 @@ const SettingsPage: React.FC = () => {
               </div>
 
               <div>
-                <Label htmlFor="gemini-api-key">Gemini API Key</Label>
+                <Label htmlFor="gemini-api-key">Gemini API Key Pool</Label>
                 <div className="mt-1 flex rounded-md shadow-sm">
                   <Input
                     type="password"
@@ -403,9 +414,12 @@ const SettingsPage: React.FC = () => {
                   </Button>
                 </div>
                 <p className="mt-2 text-sm text-gray-500">
-                  Your Gemini API key is used for translation services.
+                  Multiple Gemini API keys can be added separated by commas to handle rate limits.
                 </p>
               </div>
+
+              {/* API Key Stats Component */}
+              <ApiKeyStats className="mt-6" />
 
               <div>
                 <Label htmlFor="default-engine">Default Processing Engine</Label>

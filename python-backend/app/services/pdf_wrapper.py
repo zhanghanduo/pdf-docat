@@ -4,6 +4,10 @@ Wrapper module for PDFMathTranslate to handle import errors gracefully
 import os
 import tempfile
 from typing import Dict, Any, Optional
+from sqlalchemy.orm import Session
+
+from app.core.logging import logger
+from app.services import api_key_service
 
 # Flag to track if PDFMathTranslate is available
 pdf_translate_available = False
@@ -17,8 +21,8 @@ try:
     # If imports succeed, set the flag to True
     pdf_translate_available = True
 except ImportError as e:
-    print(f"Warning: PDFMathTranslate import failed: {e}")
-    print("PDF translation functionality will be limited")
+    logger.error(f"PDFMathTranslate import failed: {e}")
+    logger.warning("PDF translation functionality will be limited")
 
 
 def process_pdf_file(
@@ -27,6 +31,7 @@ def process_pdf_file(
     target_language: Optional[str] = None,
     translate_enabled: bool = False,
     dual_language: bool = False,
+    db: Optional[Session] = None,
 ) -> Dict[str, Any]:
     """
     Process a PDF file using PDFMathTranslate
@@ -41,12 +46,21 @@ def process_pdf_file(
         }
 
     try:
+        # Get Gemini API key from the pool
+        gemini_api_key = api_key_service.get_api_key("gemini")
+
+        # Set the API key in PDFMathTranslate's configuration
+        if gemini_api_key:
+            ConfigManager.set("GEMINI_API_KEY", gemini_api_key)
+            logger.info("Using Gemini API key from pool for translation")
+
         # Process the PDF using PDFMathTranslate
         result = translate(
             file_path,
             target_language=target_language if translate_enabled else None,
             dual_language=dual_language if translate_enabled else False,
-            engine=engine
+            engine=engine,
+            service="gemini" if translate_enabled else None
         )
 
         return {
@@ -56,6 +70,7 @@ def process_pdf_file(
             "engine": engine
         }
     except Exception as e:
+        logger.error(f"Error processing PDF: {str(e)}")
         return {
             "success": False,
             "error": str(e),

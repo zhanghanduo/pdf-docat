@@ -6,9 +6,13 @@ from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.logging import LoggingMiddleware
 from app.database import Base, engine
+from app.services import api_key_service
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
+
+# Initialize API key pools
+api_key_service.initialize_api_key_pools()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

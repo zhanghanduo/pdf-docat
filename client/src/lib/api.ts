@@ -137,6 +137,17 @@ export const userApi = {
     const response = await api.get(`/credits/logs?page=${page}&limit=${limit}`);
     return response.data;
   },
+
+  // API Key management
+  getApiKeyStats: async () => {
+    const response = await api.get('/settings/api-key-stats');
+    return response.data;
+  },
+
+  refreshApiKeys: async () => {
+    const response = await api.post('/settings/refresh-api-keys');
+    return response.data;
+  },
 };
 
 // PDF processing API

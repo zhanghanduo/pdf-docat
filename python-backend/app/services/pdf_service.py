@@ -186,7 +186,8 @@ async def process_pdf(
             result = await process_structured_pdf(
                 file_content,
                 file.filename,
-                translation_options
+                translation_options,
+                db=db
             )
         else:
             # Use OpenRouter for scanned PDFs (OCR)
@@ -262,7 +263,8 @@ async def process_pdf(
 async def process_structured_pdf(
     file_content: bytes,
     filename: str,
-    translation_options: Optional[TranslationOptions] = None
+    translation_options: Optional[TranslationOptions] = None,
+    db: Optional[Session] = None
 ) -> Dict[str, Any]:
     """
     Process a structured PDF using PDFMathTranslate
@@ -303,7 +305,8 @@ async def process_structured_pdf(
             engine="pdf-text",
             target_language=target_lang if translate_enabled else None,
             translate_enabled=translate_enabled,
-            dual_language=dual_language
+            dual_language=dual_language,
+            db=db
         )
 
         # If processing failed, use a placeholder result

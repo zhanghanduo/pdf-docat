@@ -8,8 +8,8 @@ packages = ["cargo", "libiconv", "libxcrypt", "rustc"]
 
 [deployment]
 deploymentTarget = "autoscale"
-build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+build = ["sh", "-c", "cd client && npm install && npm run build"]
+run = ["sh", "-c", "cd python-backend && python start_server.py"]
 
 [workflows]
 runButton = "Start application"
@@ -37,6 +37,19 @@ task = "packager.installForAll"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Dev Server"
+author = 23637497
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd python-backend && python start_server.py"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd client && npm run dev"
 
 [[ports]]
 localPort = 5000

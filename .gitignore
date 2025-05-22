@@ -56,7 +56,11 @@ temp
 *.sqlite3
 *.db
 
+.venv/
+.data/
+
 # Misc
 .replit
 replit.nix
 .upm
+.env

@@ -1,95 +1,113 @@
-import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
-import rateLimit from "express-rate-limit";
+import { spawn } from 'child_process';
+import * as path from 'path';
+import express from 'express';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
+// Create Express app
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+const PORT = process.env.PORT || 5000;
 
-// Create rate limiters for different endpoints
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  message: 'Too many requests from this IP, please try again after 15 minutes',
-});
-
-// More strict limiter for PDF processing to control costs
-const pdfProcessingLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // Limit each IP to 10 PDF processing requests per hour
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: 'You have exceeded the PDF processing limit. Please try again later.',
-});
-
-// Apply rate limiting to all API requests
-app.use('/api/', apiLimiter);
-
-// Apply stricter limit to PDF processing endpoint
-app.use('/api/process-pdf', pdfProcessingLimiter);
-
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
-    }
+// Start Python backend in a child process
+console.log('Starting Python backend...');
+try {
+  const pythonProcess = spawn('python', ['run.py'], {
+    cwd: path.join(process.cwd(), 'python-backend'),
+    stdio: 'inherit'
   });
 
+  pythonProcess.on('error', (error) => {
+    console.error('Failed to start Python backend:', error);
+  });
+
+  // Handle process termination
+  process.on('SIGINT', () => {
+    console.log('Terminating Python backend...');
+    pythonProcess.kill('SIGINT');
+    process.exit();
+  });
+
+  process.on('SIGTERM', () => {
+    console.log('Terminating Python backend...');
+    pythonProcess.kill('SIGTERM');
+    process.exit();
+  });
+} catch (error) {
+  console.error('Error starting Python backend:', error);
+}
+
+// Set up proxy to forward API requests to Python backend
+app.use('/api/v1', (req, res, next) => {
+  console.log(`Proxying API request to: ${req.url}`);
   next();
+}, createProxyMiddleware({
+  target: 'http://0.0.0.0:8000',
+  changeOrigin: true,
+  timeout: 30000, // 30 second timeout
+  proxyTimeout: 30000, // 30 second proxy timeout
+  pathRewrite: {
+    '^/api/v1': '/api/v1', // Keep /api/v1 prefix when forwarding to Python backend
+  },
+  onError: (err, req, res) => {
+    console.error('Proxy error:', err);
+    res.writeHead(500, {
+      'Content-Type': 'application/json',
+    });
+    res.end(JSON.stringify({ 
+      message: 'Proxy error occurred',
+      error: err.message 
+    }));
+  }
+}));
+
+// Add a fallback for /v1 routes (frontend might still use them)
+app.use('/v1', (req, res, next) => {
+  console.log(`Proxying v1 fallback request to: ${req.url}`);
+  next();
+}, createProxyMiddleware({
+  target: 'http://localhost:8000',
+  changeOrigin: true,
+  pathRewrite: {
+    '^/v1': '/api/v1', // Rewrite /v1 to /api/v1
+  },
+  onProxyReq: (proxyReq, req: any) => {
+    // Debugging proxy request
+    console.log(`Proxying ${req.method} ${req.url} to ${proxyReq.path}`);
+    
+    // If there's an authorization header, forward it
+    if (req.headers.authorization) {
+      console.log(`Forwarding authorization header: ${req.headers.authorization.substring(0, 15)}...`);
+    }
+  },
+  onError: (err: Error, req: any, res: any) => {
+    console.error('Proxy error:', err);
+    res.status(500).json({
+      error: 'Python backend is not available',
+      message: 'The PDF processing service is currently unavailable'
+    });
+  }
+}));
+
+// Simple health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Node.js server is running' });
 });
 
-(async () => {
-  const server = await registerRoutes(app);
-
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
+// Serve static files from dist/public if they exist
+try {
+  const distPath = path.join(process.cwd(), 'dist/public');
+  app.use(express.static(distPath));
+  console.log(`Serving static files from ${distPath}`);
+  
+  // Fallback for SPA routing
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
   });
+} catch (error) {
+  console.error('Error setting up static file serving:', error);
+}
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
-
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
-})();
+// Start Express server
+app.listen(PORT, () => {
+  console.log(`Node.js server running on http://localhost:${PORT}`);
+  console.log(`Proxying API requests to Python backend at http://localhost:8000`);
+});

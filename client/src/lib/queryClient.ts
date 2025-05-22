@@ -12,12 +12,33 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  // Get token from localStorage
+  const token = localStorage.getItem('token');
+  
+  // Prepare headers with Authorization if token exists
+  const headers: Record<string, string> = {};
+  if (data) {
+    headers["Content-Type"] = "application/json";
+  }
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  
+  console.log(`Making ${method} request to ${url} with token: ${token ? 'present' : 'missing'}`);
+  
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
+
+  if (res.status === 401) {
+    console.error('Authentication error:', url);
+    // Clear token if unauthorized
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  }
 
   await throwIfResNotOk(res);
   return res;
@@ -29,12 +50,34 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    // Get token from localStorage
+    const token = localStorage.getItem('token');
+    
+    // Create headers with Authorization token if it exists
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    
+    console.log(`Making GET request to ${queryKey[0]} with token: ${token ? 'present' : 'missing'}`);
+    
     const res = await fetch(queryKey[0] as string, {
       credentials: "include",
+      headers
     });
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+    if (res.status === 401) {
+      console.error('Authentication error in query:', queryKey[0]);
+      
+      // Clear token if unauthorized
+      if (unauthorizedBehavior === "throw") {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
+      
+      if (unauthorizedBehavior === "returnNull") {
+        return null;
+      }
     }
 
     await throwIfResNotOk(res);

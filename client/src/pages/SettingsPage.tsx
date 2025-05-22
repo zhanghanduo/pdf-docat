@@ -14,9 +14,11 @@ import { formatRelativeTime } from "@/lib/utils";
 import { UserFormDialog } from "@/components/UserFormDialog";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
 import { Loader2, AlertTriangle } from "lucide-react";
+import ApiKeyStats from "@/components/ApiKeyStats";
 
 const SettingsPage: React.FC = () => {
-  const [apiKey, setApiKey] = useState("••••••••••••••••••••••••••••••");
+  const [openRouterApiKey, setOpenRouterApiKey] = useState("••••••••••••••••••••••••••••••");
+  const [geminiApiKey, setGeminiApiKey] = useState("••••••••••••••••••••••••••••••");
   const [defaultEngine, setDefaultEngine] = useState("mistral-ocr");
   const [usageTracking, setUsageTracking] = useState(true);
   const [cacheAnnotations, setCacheAnnotations] = useState(true);
@@ -37,7 +39,7 @@ const SettingsPage: React.FC = () => {
       return response;
     },
   });
-  
+
   // Get the users array from the response
   const users = usersResponse || [];
 
@@ -62,7 +64,7 @@ const SettingsPage: React.FC = () => {
 
   // Update user mutation
   const updateUserMutation = useMutation({
-    mutationFn: ({ userId, userData }: { userId: number, userData: any }) => 
+    mutationFn: ({ userId, userData }: { userId: number, userData: any }) =>
       userApi.updateUser(userId, userData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
@@ -99,6 +101,34 @@ const SettingsPage: React.FC = () => {
     }
   });
 
+  // Fetch settings
+  const { data: settings } = useQuery({
+    queryKey: ["/api/settings"],
+    queryFn: async () => {
+      const response = await userApi.getSettings();
+      return response;
+    },
+  });
+
+  // Update setting mutation
+  const updateSettingMutation = useMutation({
+    mutationFn: userApi.updateSetting,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+      toast({
+        title: "Setting updated",
+        description: "API configuration has been updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error updating setting",
+        description: error.response?.data?.message || "An error occurred while updating the setting",
+        variant: "destructive",
+      });
+    }
+  });
+
   const handleSaveSettings = () => {
     toast({
       title: "Settings saved",
@@ -106,13 +136,44 @@ const SettingsPage: React.FC = () => {
     });
   };
 
-  const handleChangeApiKey = () => {
-    const newKey = prompt("Enter new API key:");
+  const handleChangeOpenRouterApiKey = () => {
+    const newKey = prompt("Enter new OpenRouter API key:");
     if (newKey) {
-      setApiKey("••••••••••••••••••••••••••••••");
+      updateSettingMutation.mutate({
+        key: "OPENROUTER_API_KEY",
+        value: newKey,
+        description: "OpenRouter API key for AI model access"
+      });
+      setOpenRouterApiKey("••••••••••••••••••••••••••••••");
       toast({
         title: "API key updated",
         description: "Your OpenRouter API key has been updated",
+      });
+    }
+  };
+
+  const handleChangeGeminiApiKey = () => {
+    const newKeys = prompt("Enter Gemini API keys (separate multiple keys with commas):");
+    if (newKeys) {
+      updateSettingMutation.mutate({
+        key: "GEMINI_API_KEY_POOL",
+        value: newKeys,
+        description: "Gemini API key pool for translation services"
+      });
+      setGeminiApiKey("••••••••••••••••••••••••••••••");
+
+      // Refresh API key pools
+      userApi.refreshApiKeys().then(() => {
+        toast({
+          title: "API key pool updated",
+          description: `Your Gemini API key pool has been updated with ${newKeys.split(',').length} keys`,
+        });
+      }).catch(error => {
+        toast({
+          title: "Error refreshing API keys",
+          description: error.message || "Failed to refresh API keys",
+          variant: "destructive",
+        });
       });
     }
   };
@@ -131,9 +192,9 @@ const SettingsPage: React.FC = () => {
     if (selectedUser) {
       // If password is empty in edit mode, remove it from the payload
       const userData = data.password ? data : { ...data, password: undefined };
-      updateUserMutation.mutate({ 
-        userId: selectedUser.id, 
-        userData 
+      updateUserMutation.mutate({
+        userId: selectedUser.id,
+        userData
       });
     } else {
       createUserMutation.mutate(data);
@@ -306,33 +367,59 @@ const SettingsPage: React.FC = () => {
               API Configuration
             </h3>
             <p className="mt-1 max-w-2xl text-sm text-gray-500">
-              Configure OpenRouter API settings.
+              Configure API keys for various services.
             </p>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
               <div>
-                <Label htmlFor="api-key">API Key</Label>
+                <Label htmlFor="openrouter-api-key">OpenRouter API Key</Label>
                 <div className="mt-1 flex rounded-md shadow-sm">
                   <Input
                     type="password"
-                    id="api-key"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
+                    id="openrouter-api-key"
+                    value={openRouterApiKey}
+                    onChange={(e) => setOpenRouterApiKey(e.target.value)}
                     readOnly
                   />
                   <Button
                     variant="outline"
                     className="ml-3"
-                    onClick={handleChangeApiKey}
+                    onClick={handleChangeOpenRouterApiKey}
                   >
                     Change
                   </Button>
                 </div>
                 <p className="mt-2 text-sm text-gray-500">
-                  Your OpenRouter API key is securely stored.
+                  Your OpenRouter API key is used for PDF processing and OCR.
                 </p>
               </div>
+
+              <div>
+                <Label htmlFor="gemini-api-key">Gemini API Key Pool</Label>
+                <div className="mt-1 flex rounded-md shadow-sm">
+                  <Input
+                    type="password"
+                    id="gemini-api-key"
+                    value={geminiApiKey}
+                    onChange={(e) => setGeminiApiKey(e.target.value)}
+                    readOnly
+                  />
+                  <Button
+                    variant="outline"
+                    className="ml-3"
+                    onClick={handleChangeGeminiApiKey}
+                  >
+                    Change
+                  </Button>
+                </div>
+                <p className="mt-2 text-sm text-gray-500">
+                  Multiple Gemini API keys can be added separated by commas to handle rate limits.
+                </p>
+              </div>
+
+              {/* API Key Stats Component */}
+              <ApiKeyStats className="mt-6" />
 
               <div>
                 <Label htmlFor="default-engine">Default Processing Engine</Label>
@@ -393,7 +480,7 @@ const SettingsPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-      
+
       {/* User Form Dialog */}
       <UserFormDialog
         open={userFormOpen}
@@ -402,7 +489,7 @@ const SettingsPage: React.FC = () => {
         user={selectedUser}
         title={selectedUser ? "Edit User" : "Add New User"}
       />
-      
+
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
         open={deleteDialogOpen}

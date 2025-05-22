@@ -6,13 +6,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/hooks/use-language";
 import NotFound from "@/pages/not-found";
-import LoginPage from "@/pages/LoginPage";
-import RegisterPage from "@/pages/RegisterPage";
 import AuthPage from "@/pages/auth-page";
 import DashboardPage from "@/pages/DashboardPage";
 import HistoryPage from "@/pages/HistoryPage";
 import SettingsPage from "@/pages/SettingsPage";
 import UsagePage from "@/pages/UsagePage";
+import DebugAuth from "@/components/DebugAuth";
+import RegisterPage from "@/pages/register-page"; // Added import for RegisterPage
+
 
 // Protected route component
 const ProtectedRoute = ({ component: Component, adminOnly = false, ...rest }: any) => {
@@ -43,20 +44,6 @@ const ProtectedRoute = ({ component: Component, adminOnly = false, ...rest }: an
   return <Component {...rest} />;
 };
 
-// Login redirect component
-const LoginRedirect = () => {
-  const [, setLocation] = useLocation();
-  const token = localStorage.getItem("token");
-
-  useEffect(() => {
-    if (token) {
-      setLocation("/dashboard");
-    }
-  }, [token, setLocation]);
-
-  return <LoginPage />;
-};
-
 // Auth redirect component
 const AuthRedirect = () => {
   const [, setLocation] = useLocation();
@@ -71,26 +58,11 @@ const AuthRedirect = () => {
   return <AuthPage />;
 };
 
-// Register redirect component
-const RegisterRedirect = () => {
-  const [, setLocation] = useLocation();
-  const token = localStorage.getItem("token");
-
-  useEffect(() => {
-    if (token) {
-      setLocation("/dashboard");
-    }
-  }, [token, setLocation]);
-
-  return <RegisterPage />;
-};
-
 function Router() {
   return (
     <Switch>
-      <Route path="/login" component={LoginRedirect} />
-      <Route path="/register" component={RegisterRedirect} />
       <Route path="/auth" component={AuthRedirect} />
+      <Route path="/register" component={RegisterPage} /> {/* Added register route */}
       <Route path="/dashboard">
         <ProtectedRoute component={DashboardPage} />
       </Route>
@@ -104,7 +76,7 @@ function Router() {
         <ProtectedRoute component={SettingsPage} adminOnly={true} />
       </Route>
       <Route path="/">
-        <Redirect to="/dashboard" />
+        <Redirect to="/auth" />
       </Route>
       <Route component={NotFound} />
     </Switch>
@@ -118,6 +90,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          {process.env.NODE_ENV !== 'production' && <DebugAuth />}
         </TooltipProvider>
       </LanguageProvider>
     </QueryClientProvider>

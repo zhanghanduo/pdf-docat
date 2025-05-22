@@ -13,11 +13,11 @@ export const ProcessingOptions: React.FC<ProcessingOptionsProps> = ({
   engine,
   onChange,
 }) => {
-  // Set default engine to "mistral-ocr" as requested
+  // Set default engine to "auto" since OCR is not yet implemented in the backend
   React.useEffect(() => {
-    // Only set if the engine isn't already set to mistral-ocr
-    if (engine !== "mistral-ocr") {
-      onChange("mistral-ocr" as EngineType);
+    // Only set if the engine isn't already set to auto
+    if (engine !== "auto") {
+      onChange("auto" as EngineType);
     }
   }, [engine, onChange]);
 

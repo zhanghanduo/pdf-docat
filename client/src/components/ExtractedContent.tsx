@@ -13,15 +13,17 @@ interface ExtractedContentProps {
   content: ExtractedContentType;
   fileName: string;
   onProcessAnother: () => void;
+  processingTime?: number;
 }
 
 export const ExtractedContent: React.FC<ExtractedContentProps> = ({
   content,
   fileName,
   onProcessAnother,
+  processingTime,
 }) => {
   const [viewMode, setViewMode] = useState<"rendered" | "markdown">("rendered");
-  
+
   const handleExportText = () => {
     exportAsText(content, fileName);
   };
@@ -29,12 +31,12 @@ export const ExtractedContent: React.FC<ExtractedContentProps> = ({
   const handleExportJSON = () => {
     exportAsJson(content, fileName);
   };
-  
+
   const handleExportMarkdown = () => {
     exportAsMarkdown(content, fileName);
   };
-  
-  const isTranslated = content.metadata.isTranslated || 
+
+  const isTranslated = content.metadata.isTranslated ||
     content.content.some(item => !!item.translatedContent);
 
   return (
@@ -71,7 +73,7 @@ export const ExtractedContent: React.FC<ExtractedContentProps> = ({
               <InfoIcon size={16} className="text-gray-500" />
               Document Information
             </h4>
-            
+
             <div className="space-y-4">
               <div>
                 <h5 className="text-sm font-medium text-gray-700 flex items-center gap-1">
@@ -83,19 +85,20 @@ export const ExtractedContent: React.FC<ExtractedContentProps> = ({
                   Pages: {content.pages}
                 </p>
               </div>
-              
+
               <div>
                 <h5 className="text-sm font-medium text-gray-700 flex items-center gap-1">
                   <Clock size={14} />
                   Processing Details
                 </h5>
                 <p className="text-sm text-gray-600 mt-1">
-                  Extraction time: {content.metadata.extractionTime}<br />
+                  {processingTime ? `Processing time: ${(processingTime / 1000).toFixed(1)}s` :
+                    `Extraction time: ${content.metadata.extractionTime}`}<br />
                   Word count: {content.metadata.wordCount}<br />
                   Confidence: {(content.metadata.confidence * 100).toFixed(1)}%
                 </p>
               </div>
-              
+
               {content.metadata.isTranslated && (
                 <div>
                   <h5 className="text-sm font-medium text-gray-700">Translation</h5>
@@ -105,27 +108,29 @@ export const ExtractedContent: React.FC<ExtractedContentProps> = ({
                   </p>
                 </div>
               )}
-              
+
               {/* Error or warning log display (if any) */}
-              {content.content.some(item => item.content?.includes("很抱歉") || item.content?.includes("error")) && (
+              {(content.content.some(item => item.content?.includes("很抱歉") || item.content?.includes("error")) ||
+                content.metadata.warning) && (
                 <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
                   <h5 className="text-sm font-medium text-amber-800 flex items-center gap-1">
                     <AlertTriangle size={14} className="text-amber-500" />
                     Processing Note
                   </h5>
                   <p className="text-sm text-amber-700 mt-1">
-                    The extraction encountered some issues. Please check the content or try uploading again.
+                    {content.metadata.warning ||
+                      "The extraction encountered some issues. Please check the content or try uploading again."}
                   </p>
                 </div>
               )}
             </div>
           </div>
-          
+
           {/* Right content area */}
           <div className="md:col-span-3">
             <div className="flex justify-between items-start mb-4">
               <h4 className="text-xl font-semibold">{content.title}</h4>
-              
+
               <div className="flex items-center space-x-2">
                 <Tabs defaultValue="rendered" onValueChange={(v) => setViewMode(v as "rendered" | "markdown")}>
                   <TabsList>
@@ -135,7 +140,7 @@ export const ExtractedContent: React.FC<ExtractedContentProps> = ({
                 </Tabs>
               </div>
             </div>
-            
+
             <Separator className="mb-6" />
 
             {viewMode === "rendered" ? (
@@ -148,7 +153,7 @@ export const ExtractedContent: React.FC<ExtractedContentProps> = ({
                         <div>
                           <p className="text-gray-900">{item.content}</p>
                         </div>
-                        
+
                         {item.translatedContent && (
                           <div className="bg-gray-50 p-3 rounded border-l-4 border-blue-500">
                             <p className="text-gray-900">{item.translatedContent}</p>
@@ -175,7 +180,7 @@ export const ExtractedContent: React.FC<ExtractedContentProps> = ({
                         <div className="bg-gray-800 text-gray-100 p-3 rounded-md overflow-x-auto">
                           <pre className="text-xs">{item.content}</pre>
                         </div>
-                        
+
                         {item.translatedContent && (
                           <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
                             <p className="text-sm text-gray-800">{item.translatedContent}</p>
@@ -186,8 +191,8 @@ export const ExtractedContent: React.FC<ExtractedContentProps> = ({
 
                     {/* Table content */}
                     {item.type === "table" && (
-                      <div className={isTranslated && item.translatedHeaders && item.translatedRows 
-                        ? "grid grid-cols-1 gap-6 mt-4" 
+                      <div className={isTranslated && item.translatedHeaders && item.translatedRows
+                        ? "grid grid-cols-1 gap-6 mt-4"
                         : ""}>
                         <div className="overflow-x-auto">
                           <table className="min-w-full divide-y divide-gray-200">
@@ -223,7 +228,7 @@ export const ExtractedContent: React.FC<ExtractedContentProps> = ({
                             </tbody>
                           </table>
                         </div>
-                        
+
                         {item.translatedHeaders && item.translatedRows && (
                           <div className="overflow-x-auto mt-4">
                             <h4 className="text-md font-medium mb-2 text-blue-600">Translated Table</h4>
@@ -269,7 +274,7 @@ export const ExtractedContent: React.FC<ExtractedContentProps> = ({
             ) : (
               <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
                 <div className="prose max-w-none">
-                  <div dangerouslySetInnerHTML={{ 
+                  <div dangerouslySetInnerHTML={{
                     __html: formatExtractedContentAsMarkdown(content)
                       .replace(/\n/g, '<br/>')
                       .replace(/#{3,} (.*)/g, '<h3>$1</h3>')

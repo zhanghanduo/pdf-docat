@@ -1,17 +1,22 @@
-modules = ["nodejs-20", "web", "postgresql-16"]
+modules = ["nodejs-20", "web", "postgresql-16", "python-3.11"]
 run = "npm run dev"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
+packages = ["cargo", "libiconv", "libxcrypt", "rustc"]
 
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-run = ["sh", "-c", "cd python-backend && uvicorn main:app --host 0.0.0.0 --port 5000"]
+run = [
+  "sh",
+  "-c",
+  "cd python-backend && uvicorn main:app --host 0.0.0.0 --port 5000",
+]
 
 [workflows]
-runButton = "Start application"
+runButton = "Dev Server"
 
 [[workflows.workflow]]
 name = "Project"
@@ -37,6 +42,23 @@ task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
 
+[[workflows.workflow]]
+name = "Dev Server"
+author = 23637497
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd python-backend && python start_server.py"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd client && npm run dev"
+
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 8000
+externalPort = 8000

@@ -45,7 +45,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(loggerMiddleware);
 
   // Registration route
-  app.post("/api/auth/register", async (req: Request, res: Response) => {
+  app.post(["/api/auth/register", "/api/v1/auth/register"], async (req: Request, res: Response) => {
     try {
       // Validate request body
       const validatedData = registrationSchema.safeParse(req.body);
@@ -96,7 +96,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Authentication routes
-  app.post("/api/auth/login", async (req: Request, res: Response) => {
+  app.post(["/api/auth/login", "/api/v1/auth/login"], async (req: Request, res: Response) => {
     try {
       // Validate request body
       const validatedData = loginSchema.safeParse(req.body);

@@ -8,7 +8,7 @@ channel = "stable-24_05"
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+run = ["sh", "-c", "cd python-backend && uvicorn main:app --host 0.0.0.0 --port 5000"]
 
 [workflows]
 runButton = "Start application"

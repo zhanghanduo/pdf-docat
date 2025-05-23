@@ -1,3 +1,4 @@
 [submodule "PDFMathTranslate"]
 	path = PDFMathTranslate
 	url = https://github.com/awwaawwa/PDFMathTranslate.git
+	branch = v2-rc

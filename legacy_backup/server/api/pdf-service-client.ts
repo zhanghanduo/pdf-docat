@@ -16,7 +16,8 @@ export async function processStructuredPDF(
   pdfBuffer: Buffer,
   fileName: string,
   sourceLanguage: string = 'en',
-  targetLanguage: string = 'zh'
+  targetLanguage: string = 'zh',
+  model: string = 'gemini-2.5-flash-preview-05-20'
 ): Promise<any> {
   try {
     console.log(`Processing structured PDF: ${fileName} using PDF service`);
@@ -30,6 +31,7 @@ export async function processStructuredPDF(
     formData.append('source_lang', sourceLanguage);
     formData.append('target_lang', targetLanguage);
     formData.append('service', 'gemini');
+    formData.append('model', model);
 
     if (apiKey) {
       formData.append('api_key', apiKey);
@@ -147,5 +149,38 @@ export async function setPDFServiceApiKey(service: string, apiKey: string): Prom
   } catch (error) {
     console.error(`Failed to set ${service} API key in PDF service:`, error);
     throw new Error(`Failed to set ${service} API key in PDF service`);
+  }
+}
+
+/**
+ * Get available models from the PDF service
+ */
+export async function getPDFServiceModels(): Promise<any> {
+  try {
+    const response = await axios.get(`${PDF_SERVICE_URL}/config/models`, {
+      timeout: 5000, // 5 second timeout
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Failed to get PDF service models:', error);
+    throw new Error('Failed to get PDF service models');
+  }
+}
+
+/**
+ * Set model in the PDF service
+ */
+export async function setPDFServiceModel(service: string, model: string): Promise<void> {
+  try {
+    await axios.post(`${PDF_SERVICE_URL}/config/model`, {
+      service,
+      model,
+    }, {
+      timeout: 5000, // 5 second timeout
+    });
+  } catch (error) {
+    console.error(`Failed to set ${service} model in PDF service:`, error);
+    throw new Error(`Failed to set ${service} model in PDF service`);
   }
 }

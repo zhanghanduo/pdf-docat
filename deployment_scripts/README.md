@@ -87,49 +87,63 @@ After running the setup scripts, you'll need to edit the following configuration
 
 ## PDFMathTranslate Submodule
 
-The application uses PDFMathTranslate as a git submodule:
+The application uses PDFMathTranslate as a git submodule tracking the **v2-rc branch**:
 
 - **Origin**: https://github.com/awwaawwa/PDFMathTranslate.git
 - **Upstream**: https://github.com/Byaidu/PDFMathTranslate.git
+- **Branch**: v2-rc (release candidate for version 2.0)
 
-To update the PDFMathTranslate submodule to the latest version:
+**Note**: The v2-rc branch introduces significant API changes from v1.x:
+- Uses a new settings-based configuration system (`SettingsModel`)
+- The high-level API functions have changed from `translate()` to `do_translate_async_stream()`
+- Requires different parameter structures and configuration methods
+
+To update the PDFMathTranslate submodule to the latest v2-rc version:
 
 ```bash
 cd PDFMathTranslate
 git fetch origin
-git checkout main
-git pull origin main
+git checkout v2-rc
+git pull origin v2-rc
 cd ..
 git add PDFMathTranslate
-git commit -m "Update PDFMathTranslate submodule"
+git commit -m "Update PDFMathTranslate submodule to latest v2-rc"
 ```
 
 To sync with upstream changes:
 
 ```bash
 cd PDFMathTranslate
+git remote add upstream https://github.com/Byaidu/PDFMathTranslate.git
 git fetch upstream
-git merge upstream/main
+git merge upstream/v2-rc
 cd ..
 git add PDFMathTranslate
-git commit -m "Sync PDFMathTranslate with upstream"
+git commit -m "Sync PDFMathTranslate with upstream v2-rc"
 ```
 
 ## Dependency Compatibility Notes
 
-The application has specific dependency version requirements to ensure compatibility:
+The application has specific dependency version requirements to ensure compatibility with PDFMathTranslate v2-rc:
 
-1. **Pydantic Version**: The backend uses Pydantic 1.10.8, which is compatible with FastAPI 0.88.0. Using newer versions of Pydantic (2.x) may cause compatibility issues.
+1. **Pydantic Version**: The backend uses Pydantic 1.10.8 for compatibility with FastAPI 0.88.0. PDFMathTranslate v2-rc also supports Pydantic 1.x, making this compatible. **Note**: Using Pydantic 2.x may cause compatibility issues with both FastAPI 0.88.0 and the current PDFMathTranslate integration.
 
 2. **PyMuPDF Import**: PyMuPDF is installed as the package `pymupdf` but imported as `fitz`. The setup script includes a compatibility layer to handle this difference.
 
-3. **PDFMathTranslate Dependencies**: The PDFMathTranslate package has specific dependency requirements. The setup script includes a wrapper module that gracefully handles import errors and provides fallback functionality.
+3. **PDFMathTranslate v2-rc Dependencies**: The v2-rc branch has different dependency requirements than v1.x. The setup script includes a wrapper module that gracefully handles import errors and provides fallback functionality.
+
+4. **API Changes**: The v2-rc branch uses a completely different API structure:
+   - Settings-based configuration with `SettingsModel`
+   - Async stream processing with `do_translate_async_stream()`
+   - Different parameter names and structures
 
 If you encounter dependency-related errors, try the following:
 
 1. Use the exact versions specified in `python-backend/requirements.txt`
-2. Check that the mock modules are properly created during setup
-3. Use the `start_server.py` script instead of `run.py` to start the server
+2. Ensure PDFMathTranslate v2-rc is properly installed with `pip install -e ../PDFMathTranslate`
+3. Check that the mock modules are properly created during setup
+4. Use the `start_server.py` script instead of `run.py` to start the server
+5. Verify that the wrapper handles the new v2-rc API correctly
 
 ## Production Deployment Notes
 

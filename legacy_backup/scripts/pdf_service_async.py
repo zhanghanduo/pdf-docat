@@ -60,11 +60,17 @@ pdf_process_model = ns_pdf.model('PDFProcessRequest', {
     'target_lang': fields.String(required=False, default='zh', description='Target language'),
     'service': fields.String(required=False, default='gemini', description='Translation service'),
     'api_key': fields.String(required=False, description='API key for the translation service'),
+    'model': fields.String(required=False, default='gemini-2.5-flash-preview-05-20', description='Gemini model to use'),
 })
 
 api_key_model = ns_config.model('APIKeyRequest', {
     'service': fields.String(required=True, description='Service name (e.g., "gemini", "openai")'),
     'api_key': fields.String(required=True, description='API key for the service'),
+})
+
+model_config_model = ns_config.model('ModelConfigRequest', {
+    'service': fields.String(required=True, description='Service name (e.g., "gemini")'),
+    'model': fields.String(required=True, description='Model name (e.g., "gemini-2.5-flash-preview-05-20")'),
 })
 
 # Helper function to run async functions in Flask
@@ -85,7 +91,8 @@ async def process_pdf_async(
     source_lang: str = 'en',
     target_lang: str = 'zh',
     service: str = 'gemini',
-    api_key: Optional[str] = None
+    api_key: Optional[str] = None,
+    model: str = 'gemini-2.5-flash-preview-05-20'
 ) -> Tuple[List[Tuple[str, str]], Dict[str, Any]]:
     """
     Process a PDF file asynchronously using PDFMathTranslate.
@@ -96,6 +103,7 @@ async def process_pdf_async(
         target_lang: Target language code
         service: Translation service to use
         api_key: API key for the translation service
+        model: Gemini model to use
         
     Returns:
         Tuple of (result_files, metadata)
@@ -104,6 +112,11 @@ async def process_pdf_async(
     if api_key and service == 'gemini':
         ConfigManager.set('GEMINI_API_KEY', api_key)
         logger.info(f"Set {service} API key for processing")
+    
+    # Set Gemini model if provided
+    if service == 'gemini' and model:
+        ConfigManager.set('GEMINI_MODEL', model)
+        logger.info(f"Set Gemini model to {model}")
     
     # Create a new event loop for the async operation
     loop = asyncio.get_event_loop()
@@ -129,6 +142,7 @@ async def process_pdf_async(
         "source_lang": source_lang,
         "target_lang": target_lang,
         "service": service,
+        "model": model if service == 'gemini' else None,
         "original_file": os.path.basename(filepath),
         "timestamp": os.path.getmtime(result_files[0][0])
     }
@@ -163,6 +177,25 @@ class ConfigLanguages(Resource):
         }
         return languages
 
+@ns_config.route('/models')
+class ConfigModels(Resource):
+    def get(self):
+        """Get available models for each service."""
+        models = {
+            "gemini": [
+                "gemini-2.5-flash-preview-05-20",
+                "gemini-2.0-flash",
+                "gemini-2.5-pro-preview-05-06"
+            ],
+            "openai": [
+                "gpt-4o-mini", 
+                "gpt-4o",
+                "gpt-4.1",
+                "gpt-4.1-mini"
+            ]
+        }
+        return models
+
 @ns_config.route('/api-key')
 class ConfigApiKey(Resource):
     @ns_config.expect(api_key_model)
@@ -185,6 +218,26 @@ class ConfigApiKey(Resource):
         
         return {"status": "success", "message": f"API key for {service} updated"}
 
+@ns_config.route('/model')
+class ConfigModel(Resource):
+    @ns_config.expect(model_config_model)
+    def post(self):
+        """Set model for a service."""
+        data = request.json
+        service = data.get('service')
+        model = data.get('model')
+        
+        if not service or not model:
+            return {"error": "Missing service or model"}, 400
+        
+        # Set the model in the configuration
+        if service == 'gemini':
+            ConfigManager.set('GEMINI_MODEL', model)
+        else:
+            return {"error": f"Unsupported service: {service}"}, 400
+        
+        return {"status": "success", "message": f"Model for {service} updated to {model}"}
+
 # File upload parser
 upload_parser = ns_pdf.parser()
 upload_parser.add_argument('pdf', location='files', type=FileStorage, required=True, help='PDF file')
@@ -192,6 +245,7 @@ upload_parser.add_argument('source_lang', location='form', type=str, default='en
 upload_parser.add_argument('target_lang', location='form', type=str, default='zh', help='Target language')
 upload_parser.add_argument('service', location='form', type=str, default='gemini', help='Translation service')
 upload_parser.add_argument('api_key', location='form', type=str, help='API key for the translation service')
+upload_parser.add_argument('model', location='form', type=str, default='gemini-2.5-flash-preview-05-20', help='Gemini model to use')
 
 @ns_pdf.route('/process')
 class ProcessPDF(Resource):
@@ -214,6 +268,7 @@ class ProcessPDF(Resource):
         target_lang = request.form.get('target_lang', 'zh')
         service = request.form.get('service', 'gemini')
         api_key = request.form.get('api_key', None)
+        model = request.form.get('model', 'gemini-2.5-flash-preview-05-20')
         
         # Save the file with a secure filename
         filename = secure_filename(file.filename)
@@ -230,7 +285,8 @@ class ProcessPDF(Resource):
                 source_lang,
                 target_lang,
                 service,
-                api_key
+                api_key,
+                model
             )
             
             # Return the paths to the processed files

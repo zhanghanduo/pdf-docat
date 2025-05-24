@@ -63,7 +63,7 @@ ${text}`;
     const response = await axios.post(
       `${BASE_API_URL}chat/completions`,
       {
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.5-flash-preview-05-20',
         messages: [
           {
             role: 'user',

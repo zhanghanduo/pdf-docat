@@ -3,217 +3,97 @@
 
 echo "Setting up PDF-Docat Python Backend..."
 
-# Create and activate virtual environment
-echo "Creating Python virtual environment..."
-python3 -m venv python_env
-source python_env/bin/activate
-
-# Upgrade pip and install wheel
-echo "Upgrading pip and installing wheel..."
-pip install --upgrade pip setuptools wheel
+# Check if uv is available, otherwise use regular pip
+if command -v uv &> /dev/null; then
+    echo "Using uv package manager..."
+    PIP_CMD="uv pip"
+    
+    # Check if .venv already exists, if not create it
+    if [ ! -d "../.venv" ]; then
+        echo "Creating Python virtual environment with uv..."
+        cd ..
+        uv venv
+        cd python-backend
+    else
+        echo "Using existing .venv virtual environment..."
+    fi
+else
+    echo "Using standard pip..."
+    PIP_CMD="pip"
+    
+    # Create and activate virtual environment
+    echo "Creating Python virtual environment..."
+    python3 -m venv python_env
+    source python_env/bin/activate
+fi
 
 # Install backend dependencies
 echo "Installing backend dependencies..."
-cd python-backend
-pip install -r requirements.txt
+cd python-backend || cd .
+$PIP_CMD install -r requirements.txt
 
 # Initialize and update PDFMathTranslate submodule
 echo "Initializing PDFMathTranslate submodule..."
+cd ..
 git submodule update --init --recursive
 
-# Install PDFMathTranslate
-echo "Installing PDFMathTranslate..."
-pip install -e ../PDFMathTranslate
+# Ensure we're on the v2-rc branch
+echo "Switching to PDFMathTranslate v2-rc branch..."
+cd PDFMathTranslate
+git checkout v2-rc
+git pull origin v2-rc
+cd ../python-backend
 
-# Create compatibility helper modules
-echo "Creating compatibility helper modules..."
-cat > mock_pymupdf.py << EOL
-"""
-Mock module for pymupdf that redirects to fitz
-"""
-import sys
-from types import ModuleType
+# Install PDFMathTranslate v2-rc
+echo "Installing PDFMathTranslate v2-rc..."
+$PIP_CMD install -e ../PDFMathTranslate
 
-try:
-    # Try to import fitz (the actual PyMuPDF module)
-    import fitz
+# Create .env file if it doesn't exist
+if [ ! -f ".env" ]; then
+    echo "Creating .env file for local development..."
+    cat > .env << EOL
+# API Configuration
+PROJECT_NAME=PDF-Docat
+SECRET_KEY=dev-secret-key-change-in-production-$(openssl rand -hex 16)
+ACCESS_TOKEN_EXPIRE_MINUTES=10080  # 7 days
 
-    # Create a mock module for pymupdf
-    class MockPyMuPDF(ModuleType):
-        def __getattr__(self, name):
-            # Redirect all attribute access to fitz
-            return getattr(fitz, name)
+# CORS Origins
+BACKEND_CORS_ORIGINS=["http://localhost:3000", "http://localhost:8000", "http://localhost:5173"]
 
-    # Create the mock module
-    mock_pymupdf = MockPyMuPDF('pymupdf')
+# Database Configuration - SQLite for local development
+USE_SQLITE=True
 
-    # Add it to sys.modules
-    sys.modules['pymupdf'] = mock_pymupdf
+# For production PostgreSQL (uncomment and configure when deploying):
+# USE_SQLITE=False
+# POSTGRES_SERVER=localhost
+# POSTGRES_USER=postgres
+# POSTGRES_PASSWORD=your_postgres_password
+# POSTGRES_DB=pdf_docat
 
-    print("Mock pymupdf module created and redirected to fitz")
-except ImportError:
-    print("Warning: Could not import fitz, mock pymupdf module not created")
+# API Keys (replace with your actual keys)
+OPENROUTER_API_KEY=your-openrouter-api-key-here
+GEMINI_API_KEY=your-gemini-api-key-here
 EOL
+    echo "✅ Created .env file. Please edit it to add your API keys."
+else
+    echo "✅ .env file already exists."
+fi
 
-# Create a wrapper for PDFMathTranslate
-echo "Creating PDFMathTranslate wrapper..."
-mkdir -p app/services
-cat > app/services/pdf_wrapper.py << EOL
-"""
-Wrapper module for PDFMathTranslate to handle import errors gracefully
-"""
-import os
-import tempfile
-from typing import Dict, Any, Optional
+# Test the integration
+echo "Testing PDFMathTranslate integration..."
+python -c "import pdf2zh; print('✅ PDFMathTranslate v2-rc imported successfully')" || echo "❌ PDFMathTranslate import failed"
 
-# Flag to track if PDFMathTranslate is available
-pdf_translate_available = False
-
-try:
-    # Try to import PDFMathTranslate modules
-    from pdf2zh.high_level import translate
-    from pdf2zh.config import ConfigManager
-    from pdf2zh.translator import GeminiTranslator
-
-    # If imports succeed, set the flag to True
-    pdf_translate_available = True
-except ImportError as e:
-    print(f"Warning: PDFMathTranslate import failed: {e}")
-    print("PDF translation functionality will be limited")
-
-
-def process_pdf_file(
-    file_path: str,
-    engine: str,
-    target_language: Optional[str] = None,
-    translate_enabled: bool = False,
-    dual_language: bool = False,
-) -> Dict[str, Any]:
-    """
-    Process a PDF file using PDFMathTranslate
-
-    Returns a dictionary with processing results or error information
-    """
-    if not pdf_translate_available:
-        return {
-            "success": False,
-            "error": "PDFMathTranslate is not available",
-            "details": "The required dependencies could not be imported"
-        }
-
-    try:
-        # Process the PDF using PDFMathTranslate
-        result = translate(
-            file_path,
-            target_language=target_language if translate_enabled else None,
-            dual_language=dual_language if translate_enabled else False,
-            engine=engine
-        )
-
-        return {
-            "success": True,
-            "result": result,
-            "pages": result.get("pages", 0),
-            "engine": engine
-        }
-    except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "details": f"Error processing PDF: {str(e)}"
-        }
-
-
-def estimate_page_count(file_path: str) -> int:
-    """
-    Estimate the number of pages in a PDF file
-    """
-    if not pdf_translate_available:
-        # Return a default value if PDFMathTranslate is not available
-        return 1
-
-    try:
-        # Use PyMuPDF to estimate page count
-        # Note: PyMuPDF is installed as 'pymupdf' but imported as 'fitz'
-        try:
-            import fitz  # PyMuPDF
-            doc = fitz.open(file_path)
-            return len(doc)
-        except ImportError:
-            print("Warning: fitz (PyMuPDF) import failed, using default page count")
-            return 1
-    except Exception as e:
-        # Return a default value if estimation fails
-        print(f"Error estimating page count: {str(e)}")
-        return 1
-EOL
-
-# Create a custom startup script
-echo "Creating custom startup script..."
-cat > start_server.py << EOL
-import uvicorn
-import os
-import logging
-from dotenv import load_dotenv
-import sys
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()
-    ]
-)
-
-# Rename the uvicorn loggers to make the output clearer
-logging.getLogger("uvicorn.error").name = "uvicorn.server"
-logging.getLogger("uvicorn.access").name = "uvicorn.http"
-
-# Import the mock modules
-import mock_pymupdf
-
-# Load environment variables
-load_dotenv()
-
-# Import all models to ensure they are registered with the Base metadata
-from app.models.user import User
-from app.models.processing_log import ProcessingLog
-from app.models.credit_log import CreditLog
-from app.models.setting import Setting
-
-# Create database tables
-from app.database import Base, engine
-Base.metadata.create_all(bind=engine)
-print("Database tables created")
-
-# Initialize database with default data
-from app.utils.init_db import create_default_users, create_default_settings
-from app.database import SessionLocal
-
-# Initialize database with default data
-db = SessionLocal()
-try:
-    create_default_users(db)
-    create_default_settings(db)
-    print("Database initialized with default data")
-finally:
-    db.close()
-
-# Start the server
-if __name__ == "__main__":
-    uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=int(os.environ.get("PORT", 8000)),
-        reload=False
-    )
-EOL
-
-# Create database tables (if using SQLite)
-echo "Initializing database..."
-python start_server.py
-
-echo "Backend setup complete!"
-echo "To activate the environment in the future, run: source python_env/bin/activate"
-echo "To start the backend server, run: cd python-backend && python start_server.py"
+echo ""
+echo "🎉 Backend setup complete!"
+echo ""
+echo "Next steps:"
+if command -v uv &> /dev/null; then
+    echo "  1. Edit python-backend/.env to add your API keys"
+    echo "  2. To start the backend: cd python-backend && python run.py"
+else
+    echo "  1. Activate the environment: source python_env/bin/activate"
+    echo "  2. Edit python-backend/.env to add your API keys"
+    echo "  3. To start the backend: cd python-backend && python run.py"
+fi
+echo "  4. Access the API at: http://localhost:8000"
+echo "  5. API docs at: http://localhost:8000/docs"

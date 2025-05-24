@@ -16,6 +16,8 @@ from app.core.logging import logger
 
 # Import our safe wrapper for PDFMathTranslate
 from app.services.pdf_wrapper import process_pdf_file, estimate_page_count
+from app.services.image_detection import detect_images_in_pdf, should_use_ocr
+from app.services.openrouter_service import openrouter_service
 
 try:
     from bs4 import BeautifulSoup
@@ -146,25 +148,50 @@ async def estimate_pdf_page_count(pdf_base64: str) -> int:
             os.remove(tmp_file_path)
 
 
-async def detect_pdf_type(pdf_base64: str) -> str:
+async def detect_pdf_type(pdf_base64: str) -> Dict[str, Any]:
     """
     Detect if a PDF is scanned (image-based) or structured (text-based)
+    Returns detailed analysis including image detection results
     """
-    # This is a simplified implementation
-    # In a real implementation, you would use a PDF library to analyze the content
-
-    # For now, we'll use a simple heuristic based on file size
-    # Scanned PDFs are typically larger
-    file_size = len(base64.b64decode(pdf_base64))
-
-    # If file size per estimated page is large, it's likely a scanned PDF
-    estimated_pages = await estimate_pdf_page_count(pdf_base64)
-    size_per_page = file_size / max(1, estimated_pages)
-
-    if size_per_page > 500 * 1024:  # More than 500KB per page
-        return "scanned"
-    else:
-        return "structured"
+    try:
+        # Decode the PDF content
+        pdf_content = base64.b64decode(pdf_base64)
+        
+        # Use the advanced image detection service
+        detection_result = detect_images_in_pdf(pdf_content)
+        
+        # Determine the PDF type based on the recommendation
+        pdf_type = "scanned" if detection_result["recommendation"] == "ocr" else "structured"
+        
+        # Add the simple type to the result for backward compatibility
+        detection_result["pdf_type"] = pdf_type
+        
+        logger.info(f"PDF analysis complete: {pdf_type} document with {detection_result['confidence']:.2f} confidence")
+        logger.info(f"Images detected: {detection_result['has_images']}, Count: {detection_result['image_count']}")
+        
+        return detection_result
+        
+    except Exception as e:
+        logger.error(f"Error in PDF type detection: {str(e)}")
+        # Fallback to simple file size based detection
+        file_size = len(base64.b64decode(pdf_base64))
+        estimated_pages = await estimate_pdf_page_count(pdf_base64)
+        size_per_page = file_size / max(1, estimated_pages)
+        
+        pdf_type = "scanned" if size_per_page > 500 * 1024 else "structured"
+        
+        return {
+            "pdf_type": pdf_type,
+            "has_images": pdf_type == "scanned",
+            "image_count": 0,
+            "text_to_image_ratio": 1.0,
+            "scanned_pages": [],
+            "structured_pages": [],
+            "total_pages": estimated_pages,
+            "confidence": 0.5,
+            "recommendation": "ocr" if pdf_type == "scanned" else "text_extraction",
+            "analysis_method": "fallback_size_based"
+        }
 
 
 async def process_pdf(
@@ -251,12 +278,20 @@ async def process_pdf(
 
     # Auto-select engine if "auto" is specified
     if engine == "auto":
-        pdf_type = await detect_pdf_type(pdf_base64)
-        if pdf_type == "scanned":
+        detection_result = await detect_pdf_type(pdf_base64)
+        pdf_type = detection_result.get("pdf_type", "structured")
+        
+        if should_use_ocr(detection_result):
             engine = "mistral-ocr"
         else:
             engine = "pdf-text"
         logger.info(f"Auto-selected engine: {engine} based on document detection")
+        logger.info(f"Detection details: {detection_result.get('analysis_method', 'unknown')} method, "
+                   f"confidence: {detection_result.get('confidence', 0):.2f}")
+    else:
+        # If engine is manually specified, still run detection for logging
+        detection_result = await detect_pdf_type(pdf_base64)
+        pdf_type = detection_result.get("pdf_type", "structured")
 
     # Create a processing log entry
     processing_log = ProcessingLog(
@@ -280,34 +315,66 @@ async def process_pdf(
                 file_content,
                 file.filename,
                 translation_options,
-                db=db
+                db=db,
+                file_annotations_input=file_annotations
             )
         else:
             # Use OpenRouter for scanned PDFs (OCR)
-            # This would be implemented separately
-            logger.warning(f"OCR processing requested for file: {file.filename} but not yet implemented")
-
-            # Fallback to structured PDF processing with a warning
-            result = await process_structured_pdf(
-                file_content,
-                file.filename,
-                translation_options,
-                db=db,  # Passing db consistently
-                file_annotations_input=file_annotations # Passing file_annotations consistently
-            )
-
-            # Add a warning to the result for OCR fallback (moved from processing_note)
-            if result.get("extracted_content") and result["extracted_content"].get("metadata"):
-                result["extracted_content"]["metadata"]["warning"] = (
-                    "OCR processing was requested, but is not yet available. "
-                    "Standard text extraction was performed as a fallback, "
-                    "which may not be suitable for scanned documents."
+            logger.info(f"Processing PDF with OCR using OpenRouter: {file.filename}")
+            
+            try:
+                # Convert translation options to dict format expected by OpenRouter service
+                translation_dict = None
+                if translation_options:
+                    translation_dict = {
+                        "translate_enabled": translation_options.translate_enabled,
+                        "target_language": translation_options.target_language,
+                        "dual_language": translation_options.dual_language
+                    }
+                
+                # Process with OpenRouter OCR
+                result = await openrouter_service.process_pdf_with_ocr(
+                    file_content,
+                    file.filename,
+                    engine,
+                    translation_dict
                 )
-                # Remove old "processing_note" if it exists, replaced by warning
-                result["extracted_content"]["metadata"].pop("processing_note", None)
-            else:
-                # This case should ideally not happen if process_structured_pdf behaves as expected
-                logger.error(f"Could not add warning for OCR fallback on {file.filename} as extracted_content or metadata is missing in the result.")
+                
+                # Add detection metadata to the result
+                if result.get("extracted_content") and result["extracted_content"].get("metadata"):
+                    result["extracted_content"]["metadata"]["detection_info"] = {
+                        "has_images": detection_result.get("has_images", False),
+                        "image_count": detection_result.get("image_count", 0),
+                        "analysis_method": detection_result.get("analysis_method", "unknown"),
+                        "confidence": detection_result.get("confidence", 0),
+                        "scanned_pages": detection_result.get("scanned_pages", [])
+                    }
+                
+            except Exception as ocr_error:
+                logger.error(f"OpenRouter OCR failed for {file.filename}: {str(ocr_error)}")
+                
+                # Fallback to structured PDF processing with a warning
+                result = await process_structured_pdf(
+                    file_content,
+                    file.filename,
+                    translation_options,
+                    db=db,
+                    file_annotations_input=file_annotations
+                )
+
+                # Add a warning to the result for OCR fallback
+                if result.get("extracted_content") and result["extracted_content"].get("metadata"):
+                    result["extracted_content"]["metadata"]["warning"] = (
+                        f"OCR processing failed ({str(ocr_error)}). "
+                        "Standard text extraction was performed as a fallback, "
+                        "which may not be suitable for scanned documents."
+                    )
+                else:
+                    logger.error(f"Could not add warning for OCR fallback on {file.filename}")
+                    
+                # Ensure the error case still reports as failed
+                if not result.get("success"):
+                    result["error"] = f"OCR failed and fallback also failed: {result.get('error', 'Unknown error')}"
         
         # Check if the processing step (structured or OCR fallback) itself reported an error
         if not result.get("success"):

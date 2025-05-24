@@ -1,215 +1,208 @@
-# PDF-Docat - PDF Content Extraction and Translation
+# PDF-Docat: 前后端分离版本
 
-PDF-Docat is a sophisticated PDF content extraction platform that leverages AI-powered OCR technology and intelligent document processing, with advanced rendering and user-friendly interfaces. It now features a Python backend with direct integration of PDFMathTranslate for improved structured PDF processing.
+一个现代化的PDF翻译应用，采用前后端分离架构，解决部署和连接性问题。
 
-## Features
+## 🏗️ 项目架构
 
-- **AI-Powered OCR**: Leverages Mistral-OCR via OpenRouter API for advanced content extraction of scanned PDFs
-- **PDFMathTranslate Integration**: Uses PDFMathTranslate v2-rc and BabelDOC for structured PDF processing with math support
-- **Smart PDF Detection**: Automatically identifies scanned vs. structured PDFs and applies the optimal processing method
-- **Intelligent Table Detection**: Automatically identifies and extracts tables with proper formatting
-- **Translation Support**: Convert extracted content to multiple languages including Chinese, English, Japanese, and more
-- **Multi-language UI**: Application interface available in Chinese (default) and English
-- **Caching System**: Avoid reprocessing duplicate files with SHA-256 based file caching
-- **User Management**: Admin interface for managing user access
-- **Rate Limiting**: Prevents abuse with tiered rate limiting
-
-## Tech Stack
-
-- **Frontend**: React with TypeScript, TailwindCSS, Shadcn UI components
-- **Backend**: Python with FastAPI (migrated from Node.js)
-- **Database**: PostgreSQL with SQLAlchemy ORM
-- **PDF Processing**: PDFMathTranslate and OpenRouter for AI model access
-- **Authentication**: JWT-based authentication with role-based access control
-- **API Documentation**: Automatic OpenAPI/Swagger documentation
-- **Containerization**: Docker and Docker Compose for easy deployment
-
-## Prerequisites
-
-- Python 3.8+ (for backend)
-- Node.js 18+ (for frontend)
-- PostgreSQL database (optional, SQLite can be used for development)
-- OpenRouter API key (for OCR processing)
-- Gemini API key (for translation services)
-
-## Installation and Setup
-
-### Using Deployment Scripts (Recommended)
-
-We provide deployment scripts to simplify the setup process:
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/yourusername/pdf-docat.git
-cd pdf-docat
+```
+PDF-Docat/
+├── backend-api/          # 🐍 Python FastAPI 后端
+│   ├── main.py          # FastAPI 应用主文件
+│   ├── requirements.txt # Python 依赖
+│   ├── Dockerfile       # Docker 配置
+│   ├── .replit          # Replit 部署配置
+│   └── README.md        # 后端详细说明
+├── frontend-app/        # ⚛️ React 前端
+│   ├── src/             # 前端源代码
+│   ├── package.json     # Node.js 依赖
+│   ├── vite.config.ts   # Vite 构建配置
+│   └── README.md        # 前端详细说明
+├── DEPLOYMENT_GUIDE.md  # 📖 完整部署指南
+└── test-connection.js   # 🧪 连接测试脚本
 ```
 
-2. Run the setup script:
+## ✨ 主要特性
 
+### 后端 API (FastAPI)
+- 🔄 **PDF 翻译** - 基于 PDFMathTranslate 的高质量翻译
+- 🌍 **多语言支持** - 支持 12+ 种语言互译
+- 📁 **文件管理** - 自动文件上传、处理和清理
+- 🏥 **健康检查** - 实时服务状态监控
+- 🔒 **CORS 支持** - 完整的跨域资源共享配置
+- 📊 **RESTful API** - 标准化的 API 接口设计
+
+### 前端应用 (React)
+- 🎯 **拖拽上传** - 直观的文件选择体验
+- 📱 **响应式设计** - 适配桌面和移动设备
+- ⚡ **实时状态** - 动态显示 API 连接状态
+- 🎨 **现代 UI** - 基于 Tailwind CSS 的美观界面
+- 🔄 **双语模式** - 支持原文和译文并排显示
+- 📥 **一键下载** - 翻译完成后自动下载
+
+## 🚀 快速开始
+
+### 方案一：分离部署（推荐）
+
+#### 1. 部署后端到 Replit
 ```bash
-./deployment_scripts/setup_all.sh
+# 1. 在 Replit 创建新的 Python 项目
+# 2. 上传 backend-api/ 目录下的所有文件
+# 3. 在 Replit Shell 中运行：
+git clone https://github.com/Byaidu/PDFMathTranslate.git
+cd PDFMathTranslate && pip install -e . && cd ..
+python main.py
+
+# 4. 记录 Replit 提供的域名，例如：
+# https://pdf-docat-api.username.replit.dev
 ```
 
-3. Edit the configuration files:
-
+#### 2. 部署前端到 Vercel
 ```bash
-# Edit backend configuration
-nano python-backend/.env
+# 1. 将 frontend-app/ 推送到 GitHub
+cd frontend-app
+git init && git add . && git commit -m "Initial commit"
+git remote add origin https://github.com/yourusername/pdf-docat-frontend.git
+git push -u origin main
 
-# Edit frontend configuration
-nano client/.env
+# 2. 在 Vercel 连接 GitHub 仓库
+# 3. 设置环境变量：
+# VITE_API_BASE_URL=https://your-backend-api.replit.dev
+
+# 4. 部署完成！
 ```
 
-4. Start the application:
+### 方案二：本地开发
 
+#### 后端
 ```bash
-# Start the backend
-cd python-backend
-source python_env/bin/activate
-python run.py
+cd backend-api
+pip install -r requirements.txt
+git clone https://github.com/Byaidu/PDFMathTranslate.git
+cd PDFMathTranslate && pip install -e . && cd ..
+python main.py
+# 后端运行在 http://localhost:8000
+```
 
-# In another terminal, start the frontend
-cd client
+#### 前端
+```bash
+cd frontend-app
+npm install
+cp .env.example .env
+# 编辑 .env 文件设置 VITE_API_BASE_URL=http://localhost:8000
 npm run dev
+# 前端运行在 http://localhost:3000
 ```
 
-5. **Test PDFMathTranslate Integration (Optional)**:
+## 🧪 测试连接
+
+使用提供的测试脚本验证前后端连接：
 
 ```bash
-# Test the PDFMathTranslate v2-rc integration
-cd python-backend
-source python_env/bin/activate
-python test_pdftranslate.py
+# 测试本地连接
+node test-connection.js
+
+# 测试远程连接
+API_BASE_URL=https://your-backend-api.replit.dev node test-connection.js
 ```
 
-6. Access the application at [http://localhost:5173](http://localhost:5173) and the API documentation at [http://localhost:8000/docs](http://localhost:8000/docs)
+## 📋 API 接口
 
-### Using Docker (Alternative)
+### 核心端点
+- `GET /` - API 信息
+- `GET /health` - 健康检查
+- `GET /docs` - 交互式 API 文档
 
-1. Clone the repository:
+### 翻译端点
+- `POST /api/v1/translate` - 上传并翻译 PDF
+- `GET /api/v1/download/{task_id}` - 下载翻译后的 PDF
+- `DELETE /api/v1/cleanup/{task_id}` - 清理临时文件
+- `GET /api/v1/supported-languages` - 获取支持的语言
 
-```bash
-git clone https://github.com/yourusername/pdf-docat.git
-cd pdf-docat
-```
+## 🌍 支持的语言
 
-2. Create a `.env` file in the python-backend directory:
+- 🇺🇸 English (en)
+- 🇨🇳 Chinese Simplified (zh)
+- 🇹🇼 Chinese Traditional (zh-TW)
+- 🇯🇵 Japanese (ja)
+- 🇰🇷 Korean (ko)
+- 🇫🇷 French (fr)
+- 🇩🇪 German (de)
+- 🇪🇸 Spanish (es)
+- 🇮🇹 Italian (it)
+- 🇵🇹 Portuguese (pt)
+- 🇷🇺 Russian (ru)
+- 🇸🇦 Arabic (ar)
 
-```env
-# API Configuration
-PROJECT_NAME=PDF-Docat
-SECRET_KEY=your-secret-key-here
-ACCESS_TOKEN_EXPIRE_MINUTES=10080
+## 🛠️ 技术栈
 
-# CORS
-BACKEND_CORS_ORIGINS=["http://localhost:3000", "http://localhost:8000", "http://localhost:5173"]
+### 后端
+- **FastAPI** - 现代 Python Web 框架
+- **PDFMathTranslate** - PDF 翻译引擎
+- **Uvicorn** - ASGI 服务器
+- **Pydantic** - 数据验证
 
-# Database
-POSTGRES_SERVER=db
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=pdf_docat
+### 前端
+- **React 18** - UI 框架
+- **TypeScript** - 类型安全
+- **Vite** - 构建工具
+- **TanStack Query** - 数据获取
+- **Tailwind CSS** - 样式框架
+- **React Dropzone** - 文件上传
 
-# API Keys
-OPENROUTER_API_KEY=your_openrouter_api_key
-GEMINI_API_KEY=your_gemini_api_key
-```
+## 🔧 故障排除
 
-3. Build and start the containers:
+### 常见问题
 
-```bash
-cd python-backend
-docker-compose up -d
-```
+1. **CORS 错误**
+   - 检查后端 CORS 配置
+   - 确认前端域名在允许列表中
 
-4. Access the application API at [http://localhost:8000](http://localhost:8000) and the API documentation at [http://localhost:8000/docs](http://localhost:8000/docs)
+2. **API 连接失败**
+   - 验证 `VITE_API_BASE_URL` 环境变量
+   - 确认后端服务正常运行
 
-## User Guide
+3. **文件上传失败**
+   - 检查文件格式（仅支持 PDF）
+   - 验证文件大小限制
 
-### Authentication
+### 调试工具
 
-The system comes with a predefined admin user:
+- 使用 `test-connection.js` 测试 API 连接
+- 查看浏览器开发者工具的网络面板
+- 检查后端日志输出
 
-- Username: admin_handuo
-- Password: Christlurker2
+## 📈 部署选项
 
-New users must be created by an admin through the user management interface.
+### 后端部署
+- **Replit** - 快速部署，适合原型
+- **Docker** - 容器化部署
+- **云服务** - AWS, Google Cloud, Azure
 
-### PDF Processing
+### 前端部署
+- **Vercel** - 零配置部署
+- **Netlify** - 静态站点托管
+- **GitHub Pages** - 免费托管
 
-1. Log in to the application
-2. Navigate to the Dashboard
-3. Upload a PDF file
-4. Configure translation options if needed
-5. Click "Process Document"
-6. View and export the extracted content
+## 🤝 贡献
 
-### Translation Options
+欢迎提交 Issue 和 Pull Request！
 
-- **Enable Translation**: Toggle translation on/off
-- **Target Language**: Select the language to translate to
-- **Dual Language View**: Display both original and translated text
+## 📄 许可证
 
-## Docker Compose Configuration
+MIT License
 
-The included `docker-compose.yml` file in the python-backend directory sets up:
+## 🙏 致谢
 
-1. A Python FastAPI application container
-2. A PostgreSQL database container
-3. Proper networking between containers
-4. Volume mapping for persistent data storage
+- [PDFMathTranslate](https://github.com/Byaidu/PDFMathTranslate) - 核心翻译引擎
+- [FastAPI](https://fastapi.tiangolo.com/) - 后端框架
+- [React](https://reactjs.org/) - 前端框架
 
-## Development
+---
 
-### Project Structure
+**为什么选择前后端分离？**
 
-```plaintext
-pdf-docat/
-├── client/                     # Frontend React application
-│   ├── src/
-│   │   ├── components/         # UI components
-│   │   ├── hooks/              # React hooks
-│   │   ├── lib/                # Utility functions
-│   │   ├── pages/              # Application pages
-│   │   └── App.tsx             # Main application component
-├── python-backend/             # Python FastAPI backend
-│   ├── app/
-│   │   ├── api/                # API endpoints
-│   │   ├── core/               # Core functionality
-│   │   ├── models/             # SQLAlchemy models
-│   │   ├── schemas/            # Pydantic schemas
-│   │   ├── services/           # Business logic
-│   │   └── utils/              # Utility functions
-│   ├── main.py                 # Application entry point
-│   └── docker-compose.yml      # Docker Compose configuration
-├── deployment_scripts/         # Deployment and setup scripts
-└── legacy_backup/              # Backup of the original Node.js backend
-```
-
-### Database Migrations
-
-The project uses SQLAlchemy ORM for database access. To update the database schema:
-
-1. Modify the SQLAlchemy models in `python-backend/app/models/`
-2. Use Alembic to generate and apply migrations:
-
-```bash
-cd python-backend
-alembic revision --autogenerate -m "Description of changes"
-alembic upgrade head
-```
-
-## License
-
-MIT
-
-## Acknowledgements
-
-- OpenRouter for AI model access
-- Gemini for translation services
-- PDFMathTranslate for structured PDF processing
-- FastAPI for the Python backend framework
-- SQLAlchemy for database ORM
-- Shadcn UI for component library
-- All the open source libraries that made this project possible
+1. **解决连接问题** - 避免 Replit 的网络限制
+2. **独立扩展** - 前后端可以独立部署和扩展
+3. **技术灵活性** - 可以选择最适合的托管平台
+4. **成本优化** - 根据需求选择不同的服务等级
+5. **开发效率** - 团队可以并行开发前后端功能

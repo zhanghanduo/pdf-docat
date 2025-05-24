@@ -5,7 +5,7 @@ PDF-Docat is a sophisticated PDF content extraction platform that leverages AI-p
 ## Features
 
 - **AI-Powered OCR**: Leverages Mistral-OCR via OpenRouter API for advanced content extraction of scanned PDFs
-- **PDFMathTranslate Integration**: Uses PDFMathTranslate and BabelDOC for structured PDF processing with math support
+- **PDFMathTranslate Integration**: Uses PDFMathTranslate v2-rc and BabelDOC for structured PDF processing with math support
 - **Smart PDF Detection**: Automatically identifies scanned vs. structured PDFs and applies the optimal processing method
 - **Intelligent Table Detection**: Automatically identifies and extracts tables with proper formatting
 - **Translation Support**: Convert extracted content to multiple languages including Chinese, English, Japanese, and more
@@ -74,7 +74,16 @@ cd client
 npm run dev
 ```
 
-5. Access the application at [http://localhost:5173](http://localhost:5173) and the API documentation at [http://localhost:8000/docs](http://localhost:8000/docs)
+5. **Test PDFMathTranslate Integration (Optional)**:
+
+```bash
+# Test the PDFMathTranslate v2-rc integration
+cd python-backend
+source python_env/bin/activate
+python test_pdftranslate.py
+```
+
+6. Access the application at [http://localhost:5173](http://localhost:5173) and the API documentation at [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ### Using Docker (Alternative)
 

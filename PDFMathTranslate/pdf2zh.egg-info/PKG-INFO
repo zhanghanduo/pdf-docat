@@ -1,8 +1,0 @@
-Metadata-Version: 2.4
-Name: pdf2zh
-Version: 0.1.0
-Summary: PDF processing and translation utilities
-Requires-Dist: python-dotenv
-Requires-Dist: requests
-Dynamic: requires-dist
-Dynamic: summary

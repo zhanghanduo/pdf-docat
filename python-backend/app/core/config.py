@@ -2,6 +2,7 @@ from typing import Dict, List
 import os
 import json
 from dotenv import load_dotenv
+import pathlib
 
 # Load environment variables
 load_dotenv()
@@ -46,7 +47,10 @@ class Settings:
     SQLALCHEMY_DATABASE_URI: str = os.getenv("SQLALCHEMY_DATABASE_URI", "")
     if not SQLALCHEMY_DATABASE_URI:
         if USE_SQLITE:
-            SQLALCHEMY_DATABASE_URI = "sqlite:///./pdf_docat.db"
+            # Use SQLite database within the python-backend directory
+            backend_dir = pathlib.Path(__file__).parent.parent.parent
+            db_path = backend_dir / "pdf_docat.db"
+            SQLALCHEMY_DATABASE_URI = f"sqlite:///{db_path}"
         else:
             SQLALCHEMY_DATABASE_URI = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}/{POSTGRES_DB}"
 

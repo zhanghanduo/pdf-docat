@@ -1,0 +1,71 @@
+# Core dependencies (existing)
+fastapi==0.88.0
+pydantic==1.10.8
+uvicorn==0.15.0
+sqlalchemy==1.4.46
+passlib==1.7.4
+bcrypt==3.2.2
+python-jose==3.3.0
+python-multipart==0.0.5
+email-validator==1.3.1
+alembic==1.7.7
+psycopg2-binary==2.9.6
+gunicorn==20.1.0
+python-dotenv==0.21.1
+
+# PDF processing dependencies (existing)
+requests==2.31.0
+pymupdf==1.22.5
+tqdm==4.66.1
+tenacity==8.2.3
+numpy==1.26.0
+httpx==0.25.2
+beautifulsoup4==4.12.2
+lxml==4.9.3
+
+# PRODUCTION ENHANCEMENTS FOR MULTI-USER DEPLOYMENT
+
+# Task Queue & Background Processing
+celery[redis]==5.3.4
+redis==5.0.1
+flower==2.0.1  # Celery monitoring
+
+# Async & Real-time Communication
+aioredis==2.0.1
+fastapi-socketio==0.0.10
+python-socketio==5.9.0
+
+# Caching & Session Management
+redis-py==5.0.1
+python-memcached==1.59  # Alternative caching option
+
+# Enhanced Database & Performance
+asyncpg==0.29.0  # Async PostgreSQL driver
+databases[postgresql]==0.8.0  # Async database interface
+sqlalchemy[asyncio]==1.4.46
+
+# Rate Limiting & Security
+slowapi==0.1.9  # Rate limiting middleware
+python-limiter==3.5.0
+authlib==1.2.1  # Enhanced OAuth support
+cryptography==41.0.7
+
+# File Storage & Upload Handling
+boto3==1.34.0  # AWS S3 for file storage
+minio==7.2.0  # Self-hosted object storage
+aiofiles==23.2.0  # Async file operations
+
+# Monitoring & Observability
+prometheus-client==0.19.0
+structlog==23.2.0  # Structured logging
+sentry-sdk[fastapi]==1.38.0  # Error tracking
+
+# Production Server & Load Balancing
+uvicorn[standard]==0.24.0
+gunicorn==21.2.0
+
+# Development & Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+factory-boy==3.3.0  # Test data factories
+faker==20.1.0 

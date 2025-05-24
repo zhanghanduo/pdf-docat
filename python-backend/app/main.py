@@ -15,6 +15,9 @@ Base.metadata.create_all(bind=engine)
 # Initialize API key pools
 api_key_service.initialize_api_key_pools()
 
+# Update settings from database (after database is initialized)
+settings.update_from_database()
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",

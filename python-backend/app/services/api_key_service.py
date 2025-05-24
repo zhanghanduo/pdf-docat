@@ -7,6 +7,7 @@ import time
 from typing import Dict, List, Optional, Tuple
 import threading
 from datetime import datetime, timedelta
+import logging
 
 from app.core.logging import logger
 from app.services import settings_service
@@ -116,31 +117,90 @@ class ApiKeyPool:
 _api_key_pools: Dict[str, ApiKeyPool] = {}
 
 
+def get_api_keys_from_db_or_env(db: Session, key_name: str) -> List[str]:
+    """
+    Get API keys from database first, then fallback to environment
+    """
+    # Try database first
+    setting = settings_service.get_setting(db, key_name)
+    if setting and setting.value:
+        if "," in setting.value:
+            # Multiple keys separated by comma
+            return [key.strip() for key in setting.value.split(",") if key.strip()]
+        else:
+            # Single key
+            return [setting.value.strip()]
+    
+    # Fallback to environment variables
+    env_value = os.environ.get(key_name, "")
+    if env_value:
+        if "," in env_value:
+            return [key.strip() for key in env_value.split(",") if key.strip()]
+        else:
+            return [env_value.strip()]
+    
+    return []
+
+
 def initialize_api_key_pools() -> None:
     """
-    Initialize API key pools from environment variables
+    Initialize API key pools from database first, then environment variables
     """
-    # Initialize Gemini API key pool
-    gemini_keys_str = os.environ.get("GEMINI_API_KEY_POOL", os.environ.get("GEMINI_API_KEYS", ""))
-    if gemini_keys_str:
-        gemini_keys = [key.strip() for key in gemini_keys_str.split(",") if key.strip()]
-        if gemini_keys:
-            _api_key_pools["gemini"] = ApiKeyPool(
-                service_name="gemini",
-                keys=gemini_keys,
-                rate_limit_per_minute=60  # Gemini has a default limit of 60 requests per minute per key
+    try:
+        from app.database import SessionLocal
+        db = SessionLocal()
+        
+        try:
+            # Initialize Gemini API key pool
+            gemini_keys = get_api_keys_from_db_or_env(db, "GEMINI_API_KEY_POOL")
+            if not gemini_keys:
+                # Try legacy single key
+                gemini_keys = get_api_keys_from_db_or_env(db, "GEMINI_API_KEY")
+            
+            if gemini_keys:
+                _api_key_pools["gemini"] = ApiKeyPool(
+                    service_name="gemini",
+                    keys=gemini_keys,
+                    rate_limit_per_minute=60  # Gemini has a default limit of 60 requests per minute per key
+                )
+                logger.info(f"Initialized Gemini API key pool with {len(gemini_keys)} keys")
+            
+            # Initialize OpenRouter API key pool
+            openrouter_keys = get_api_keys_from_db_or_env(db, "OPENROUTER_API_KEY")
+            if openrouter_keys:
+                _api_key_pools["openrouter"] = ApiKeyPool(
+                    service_name="openrouter",
+                    keys=openrouter_keys,
+                    rate_limit_per_minute=20  # OpenRouter typically has lower rate limits
+                )
+                logger.info("Initialized OpenRouter API key pool")
+                
+        finally:
+            db.close()
+            
+    except Exception as e:
+        logger.warning(f"Could not initialize API keys from database, falling back to environment: {e}")
+        
+        # Fallback to environment variables only
+        gemini_keys_str = os.environ.get("GEMINI_API_KEY_POOL", os.environ.get("GEMINI_API_KEYS", ""))
+        if gemini_keys_str:
+            gemini_keys = [key.strip() for key in gemini_keys_str.split(",") if key.strip()]
+            if gemini_keys:
+                _api_key_pools["gemini"] = ApiKeyPool(
+                    service_name="gemini",
+                    keys=gemini_keys,
+                    rate_limit_per_minute=60
+                )
+                logger.info(f"Initialized Gemini API key pool from environment with {len(gemini_keys)} keys")
+        
+        openrouter_key = os.environ.get("OPENROUTER_API_KEY", "")
+        if openrouter_key:
+            _api_key_pools["openrouter"] = ApiKeyPool(
+                service_name="openrouter",
+                keys=[openrouter_key],
+                rate_limit_per_minute=20
             )
-            logger.info(f"Initialized Gemini API key pool with {len(gemini_keys)} keys")
-    
-    # Initialize OpenRouter API key pool (if needed in the future)
-    openrouter_key = os.environ.get("OPENROUTER_API_KEY", "")
-    if openrouter_key:
-        _api_key_pools["openrouter"] = ApiKeyPool(
-            service_name="openrouter",
-            keys=[openrouter_key],
-            rate_limit_per_minute=20  # OpenRouter typically has lower rate limits
-        )
-        logger.info("Initialized OpenRouter API key pool")
+            logger.info("Initialized OpenRouter API key pool from environment")
 
 
 def get_api_key(service_name: str) -> str:
@@ -164,9 +224,19 @@ def get_api_key_from_db(db: Session, service_name: str) -> str:
     Get an API key from the database settings
     """
     setting_key = f"{service_name.upper()}_API_KEY"
-    setting = settings_service.get_setting(db, setting_key)
+    if service_name == "gemini":
+        # Try pool first, then single key
+        setting = settings_service.get_setting(db, "GEMINI_API_KEY_POOL")
+        if not setting or not setting.value:
+            setting = settings_service.get_setting(db, "GEMINI_API_KEY")
+    else:
+        setting = settings_service.get_setting(db, setting_key)
     
     if setting and setting.value:
+        # If it's a pool, return the first key
+        if "," in setting.value:
+            keys = [key.strip() for key in setting.value.split(",") if key.strip()]
+            return keys[0] if keys else ""
         return setting.value
     
     # Fallback to the pool
@@ -178,9 +248,11 @@ def update_api_key_pool_from_db(db: Session) -> None:
     Update API key pools from database settings
     """
     # Update Gemini API key pool
-    gemini_setting = settings_service.get_setting(db, "GEMINI_API_KEY_POOL")
-    if gemini_setting and gemini_setting.value:
-        gemini_keys = [key.strip() for key in gemini_setting.value.split(",") if key.strip()]
+    gemini_keys = get_api_keys_from_db_or_env(db, "GEMINI_API_KEY_POOL")
+    if not gemini_keys:
+        gemini_keys = get_api_keys_from_db_or_env(db, "GEMINI_API_KEY")
+    
+    if gemini_keys:
         if "gemini" not in _api_key_pools:
             _api_key_pools["gemini"] = ApiKeyPool(
                 service_name="gemini",
@@ -193,6 +265,22 @@ def update_api_key_pool_from_db(db: Session) -> None:
             _api_key_pools["gemini"].usage_counts = {key: [] for key in gemini_keys}
         
         logger.info(f"Updated Gemini API key pool from database with {len(gemini_keys)} keys")
+    
+    # Update OpenRouter API key pool
+    openrouter_keys = get_api_keys_from_db_or_env(db, "OPENROUTER_API_KEY")
+    if openrouter_keys:
+        if "openrouter" not in _api_key_pools:
+            _api_key_pools["openrouter"] = ApiKeyPool(
+                service_name="openrouter",
+                keys=openrouter_keys,
+                rate_limit_per_minute=20
+            )
+        else:
+            # Update existing pool
+            _api_key_pools["openrouter"].keys = openrouter_keys
+            _api_key_pools["openrouter"].usage_counts = {key: [] for key in openrouter_keys}
+        
+        logger.info(f"Updated OpenRouter API key pool from database with {len(openrouter_keys)} keys")
 
 
 def get_api_key_usage_stats() -> Dict[str, Dict[str, Dict[str, int]]]:

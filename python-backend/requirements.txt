@@ -20,7 +20,7 @@ pymupdf==1.22.5
 tqdm==4.66.1
 tenacity==8.2.3
 numpy==1.26.0
-httpx==0.25.2g
+httpx==0.25.2
 
 # Additional dependencies for PDFMathTranslate v2-rc compatibility
 beautifulsoup4==4.12.2

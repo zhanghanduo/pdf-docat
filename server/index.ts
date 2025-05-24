@@ -25,7 +25,9 @@ app.use((req, res, next) => {
 });
 
 // Start Python backend in a child process
-console.log('Starting Python backend...');
+console.log('Python backend should be started separately...');
+// Commented out to avoid conflicts when running backend separately
+/*
 try {
   const pythonProcess = spawn('python', ['run.py'], {
     cwd: path.join(process.cwd(), 'python-backend'),
@@ -52,6 +54,7 @@ try {
 } catch (error) {
   console.error('Error starting Python backend:', error);
 }
+*/
 
 // Set up proxy to forward API requests to Python backend
 app.use('/api/v1', (req, res, next) => {

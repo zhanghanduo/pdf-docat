@@ -1,0 +1,54 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Install system dependencies including OpenGL libraries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    libfontconfig1 \
+    libxss1 \
+    libgconf-2-4 \
+    libxtst6 \
+    libxrandr2 \
+    libasound2 \
+    libgtk-3-0 \
+    libdrm2 \
+    libxcomposite1 \
+    libxdamage1 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install dependencies
+COPY python-backend/requirements-production.txt .
+RUN pip install --no-cache-dir -r requirements-production.txt
+
+# Copy PDFMathTranslate and install it (from the root context)
+COPY PDFMathTranslate /app/PDFMathTranslate
+RUN pip install -e /app/PDFMathTranslate
+
+# Copy application code
+COPY python-backend/ .
+
+# Create necessary directories
+RUN mkdir -p /app/uploads /app/logs
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV PORT=8000
+ENV PYTHONUNBUFFERED=1
+
+# Set display for headless operation
+ENV DISPLAY=:99
+
+# Expose port
+EXPOSE 8000
+
+# Run the application with gunicorn for production
+CMD ["gunicorn", "app.main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000"] 

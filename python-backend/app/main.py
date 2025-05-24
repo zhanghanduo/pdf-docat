@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import re
 
 from app.api.v1.router import api_router
 from app.core.config import settings
@@ -20,10 +21,38 @@ app = FastAPI(
 )
 
 # Set up CORS - use default origins if none are specified
-cors_origins = settings.BACKEND_CORS_ORIGINS or ["http://localhost:3000", "http://localhost:8000", "http://localhost:5173"]
+cors_origins = settings.BACKEND_CORS_ORIGINS or [
+    "http://localhost:3000", 
+    "http://localhost:8000", 
+    "http://localhost:5173",
+    "https://*.replit.app",
+    "https://*.replit.dev", 
+    "https://*.replit.co"
+]
+
+# Convert wildcard patterns to regex for CORS
+cors_origin_patterns = []
+for origin in cors_origins:
+    if "*" in origin:
+        # Convert wildcard to regex pattern
+        pattern = origin.replace("*", ".*").replace(".", r"\.")
+        cors_origin_patterns.append(re.compile(pattern))
+    else:
+        cors_origin_patterns.append(origin)
+
+def cors_allow_origin_func(origin: str) -> bool:
+    """Custom function to check if origin is allowed"""
+    for pattern in cors_origin_patterns:
+        if isinstance(pattern, re.Pattern):
+            if pattern.match(origin):
+                return True
+        elif pattern == origin:
+            return True
+    return False
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origin_regex=r"https://.*\.replit\.(app|dev|co)|http://localhost:\d+|https://pdf-docat\.handuo\.replit\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

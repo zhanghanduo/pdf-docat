@@ -5,14 +5,32 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 
 // Create Express app
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT || '5000', 10);
+const BACKEND_PORT = parseInt(process.env.BACKEND_PORT || '8000', 10);
+const BACKEND_URL = process.env.NODE_ENV === 'production' 
+  ? `http://0.0.0.0:${BACKEND_PORT}` 
+  : `http://localhost:${BACKEND_PORT}`;
+
+// Add CORS middleware for Replit deployment
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
 
 // Start Python backend in a child process
 console.log('Starting Python backend...');
 try {
   const pythonProcess = spawn('python', ['run.py'], {
     cwd: path.join(process.cwd(), 'python-backend'),
-    stdio: 'inherit'
+    stdio: 'inherit',
+    env: { ...process.env, PORT: BACKEND_PORT.toString() }
   });
 
   pythonProcess.on('error', (error) => {
@@ -40,22 +58,12 @@ app.use('/api/v1', (req, res, next) => {
   console.log(`Proxying API request to: ${req.url}`);
   next();
 }, createProxyMiddleware({
-  target: 'http://0.0.0.0:8000',
+  target: BACKEND_URL,
   changeOrigin: true,
   timeout: 30000, // 30 second timeout
   proxyTimeout: 30000, // 30 second proxy timeout
   pathRewrite: {
     '^/api/v1': '/api/v1', // Keep /api/v1 prefix when forwarding to Python backend
-  },
-  onError: (err, req, res) => {
-    console.error('Proxy error:', err);
-    res.writeHead(500, {
-      'Content-Type': 'application/json',
-    });
-    res.end(JSON.stringify({ 
-      message: 'Proxy error occurred',
-      error: err.message 
-    }));
   }
 }));
 
@@ -64,32 +72,21 @@ app.use('/v1', (req, res, next) => {
   console.log(`Proxying v1 fallback request to: ${req.url}`);
   next();
 }, createProxyMiddleware({
-  target: 'http://localhost:8000',
+  target: BACKEND_URL,
   changeOrigin: true,
   pathRewrite: {
     '^/v1': '/api/v1', // Rewrite /v1 to /api/v1
-  },
-  onProxyReq: (proxyReq, req: any) => {
-    // Debugging proxy request
-    console.log(`Proxying ${req.method} ${req.url} to ${proxyReq.path}`);
-    
-    // If there's an authorization header, forward it
-    if (req.headers.authorization) {
-      console.log(`Forwarding authorization header: ${req.headers.authorization.substring(0, 15)}...`);
-    }
-  },
-  onError: (err: Error, req: any, res: any) => {
-    console.error('Proxy error:', err);
-    res.status(500).json({
-      error: 'Python backend is not available',
-      message: 'The PDF processing service is currently unavailable'
-    });
   }
 }));
 
 // Simple health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Node.js server is running' });
+  res.json({ 
+    status: 'ok', 
+    message: 'Node.js server is running',
+    backend_url: BACKEND_URL,
+    port: PORT 
+  });
 });
 
 // Serve static files from dist/public if they exist
@@ -107,7 +104,7 @@ try {
 }
 
 // Start Express server
-app.listen(PORT, () => {
-  console.log(`Node.js server running on http://localhost:${PORT}`);
-  console.log(`Proxying API requests to Python backend at http://localhost:8000`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Node.js server running on http://0.0.0.0:${PORT}`);
+  console.log(`Proxying API requests to Python backend at ${BACKEND_URL}`);
 });

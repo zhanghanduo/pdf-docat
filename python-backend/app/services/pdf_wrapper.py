@@ -26,6 +26,28 @@ try:
 except ImportError as e:
     logger.error(f"PDFMathTranslate import failed: {e}")
     logger.warning("PDF translation functionality will be limited")
+    
+    # Define dummy classes to prevent NameError
+    class SettingsModel:
+        pass
+    
+    class BasicSettings:
+        pass
+    
+    class TranslationSettings:
+        pass
+    
+    class PDFSettings:
+        pass
+    
+    class GeminiSettings:
+        pass
+    
+    class OpenAISettings:
+        pass
+    
+    def do_translate_async_stream(*args, **kwargs):
+        raise ImportError("PDFMathTranslate is not available")
 
 
 def process_pdf_file(
@@ -153,6 +175,9 @@ async def _run_translation_async(settings: SettingsModel, file_path: Path) -> Di
     """
     Run PDFMathTranslate async stream processing
     """
+    if not pdf_translate_available:
+        raise ImportError("PDFMathTranslate is not available")
+        
     result_data = {
         "page_data": [],
         "metadata": {},

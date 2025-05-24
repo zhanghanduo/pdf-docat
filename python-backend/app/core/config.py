@@ -43,8 +43,8 @@ class Settings:
     # Check if USE_SQLITE is set to True
     USE_SQLITE: bool = os.getenv("USE_SQLITE", "").lower() == "true"
 
-    # Build database URI
-    SQLALCHEMY_DATABASE_URI: str = os.getenv("SQLALCHEMY_DATABASE_URI", "")
+    # Build database URI - Priority: DATABASE_URL > constructed URI > SQLite fallback
+    SQLALCHEMY_DATABASE_URI: str = os.getenv("DATABASE_URL", "") or os.getenv("SQLALCHEMY_DATABASE_URI", "")
     if not SQLALCHEMY_DATABASE_URI:
         if USE_SQLITE:
             # Use SQLite database within the python-backend directory

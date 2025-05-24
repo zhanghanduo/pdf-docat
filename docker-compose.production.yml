@@ -37,8 +37,8 @@ services:
   # FastAPI Application Server
   api:
     build:
-      context: ./python-backend
-      dockerfile: Dockerfile.production
+      context: .
+      dockerfile: ./python-backend/Dockerfile.production
     environment:
       - POSTGRES_SERVER=postgres
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
@@ -67,8 +67,8 @@ services:
   # Celery Worker for Background Tasks
   celery-worker:
     build:
-      context: ./python-backend
-      dockerfile: Dockerfile.production
+      context: .
+      dockerfile: ./python-backend/Dockerfile.production
     environment:
       - POSTGRES_SERVER=postgres
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
@@ -96,8 +96,8 @@ services:
   # Celery Beat for Scheduled Tasks
   celery-beat:
     build:
-      context: ./python-backend
-      dockerfile: Dockerfile.production
+      context: .
+      dockerfile: ./python-backend/Dockerfile.production
     environment:
       - POSTGRES_SERVER=postgres
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
@@ -120,8 +120,8 @@ services:
   # Flower - Celery Monitoring Dashboard
   flower:
     build:
-      context: ./python-backend
-      dockerfile: Dockerfile.production
+      context: .
+      dockerfile: ./python-backend/Dockerfile.production
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0

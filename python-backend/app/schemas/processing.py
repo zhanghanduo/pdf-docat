@@ -1,6 +1,6 @@
 from typing import Optional, List, Dict, Any, Union
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class ContentItem(BaseModel):
@@ -55,14 +55,13 @@ class ProcessingLogUpdate(BaseModel):
 
 
 class ProcessingLogInDBBase(ProcessingLogBase):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     user_id: int
     extracted_content: Optional[Dict[str, Any]] = None
     file_annotations: Optional[Dict[str, Any]] = None
     timestamp: datetime
-
-    class Config:
-        orm_mode = True
 
 
 class ProcessingLog(ProcessingLogInDBBase):

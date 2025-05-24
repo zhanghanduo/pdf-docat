@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Connection Test</title>
+</head>
+<body>
+    <h1>API Connection Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        const API_BASE_URL = 'http://localhost:8000/api/v1';
+        const resultsDiv = document.getElementById('results');
+        
+        function log(message) {
+            resultsDiv.innerHTML += '<p>' + message + '</p>';
+            console.log(message);
+        }
+        
+        async function testConnection() {
+            try {
+                log('Testing API connection...');
+                
+                // Test 1: Basic API endpoint
+                const response1 = await fetch(API_BASE_URL + '/');
+                const data1 = await response1.json();
+                log('✅ API root endpoint: ' + JSON.stringify(data1));
+                
+                // Test 2: Health endpoint
+                const response2 = await fetch(API_BASE_URL + '/health/');
+                const data2 = await response2.json();
+                log('✅ Health endpoint: ' + JSON.stringify(data2));
+                
+                // Test 3: Login endpoint (should fail with wrong credentials)
+                const formData = new URLSearchParams();
+                formData.append('username', 'test@example.com');
+                formData.append('password', 'test');
+                
+                const response3 = await fetch(API_BASE_URL + '/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: formData
+                });
+                
+                const data3 = await response3.json();
+                log('✅ Login endpoint response: ' + JSON.stringify(data3));
+                
+                log('🎉 All API endpoints are accessible! No network errors.');
+                
+            } catch (error) {
+                log('❌ Network error: ' + error.message);
+                log('This indicates a connectivity issue between frontend and backend.');
+            }
+        }
+        
+        // Run test when page loads
+        testConnection();
+    </script>
+</body>
+</html> 

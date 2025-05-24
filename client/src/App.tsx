@@ -12,7 +12,7 @@ import HistoryPage from "@/pages/HistoryPage";
 import SettingsPage from "@/pages/SettingsPage";
 import UsagePage from "@/pages/UsagePage";
 import DebugAuth from "@/components/DebugAuth";
-import RegisterPage from "@/pages/register-page"; // Added import for RegisterPage
+import RegisterPage from "@/pages/RegisterPage"; // Added import for RegisterPage
 
 
 // Protected route component

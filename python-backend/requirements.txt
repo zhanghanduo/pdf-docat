@@ -16,10 +16,11 @@ python-dotenv==0.21.1
 # PDF processing dependencies
 requests==2.31.0
 pymupdf==1.22.5
+
 tqdm==4.66.1
 tenacity==8.2.3
 numpy==1.26.0
-httpx==0.25.2
+httpx==0.25.2g
 
 # Additional dependencies for PDFMathTranslate v2-rc compatibility
 beautifulsoup4==4.12.2

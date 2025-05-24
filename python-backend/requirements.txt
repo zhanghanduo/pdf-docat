@@ -1,6 +1,6 @@
 # Core dependencies with specific versions for compatibility
-fastapi==0.88.0
-pydantic==1.10.8
+fastapi==0.115.6
+pydantic==2.11.5
 uvicorn==0.15.0
 sqlalchemy==1.4.46
 passlib==1.7.4
@@ -26,5 +26,3 @@ beautifulsoup4==4.12.2
 lxml==4.9.3
 
 
-# PDFMathTranslate v2-rc
--e ./PDFMathTranslate

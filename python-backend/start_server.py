@@ -18,7 +18,6 @@ logging.getLogger("uvicorn.error").name = "uvicorn.server"
 logging.getLogger("uvicorn.access").name = "uvicorn.http"
 
 # Import the mock modules
-import mock_pydantic
 import mock_pymupdf
 
 # Load environment variables

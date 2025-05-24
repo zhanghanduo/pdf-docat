@@ -1,6 +1,6 @@
 from typing import Optional
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class SettingBase(BaseModel):
@@ -19,11 +19,10 @@ class SettingUpdate(BaseModel):
 
 
 class SettingInDBBase(SettingBase):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     updated_at: datetime
-
-    class Config:
-        orm_mode = True
 
 
 class Setting(SettingInDBBase):

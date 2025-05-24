@@ -1,6 +1,6 @@
 from typing import Optional
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class CreditLogBase(BaseModel):
@@ -14,12 +14,11 @@ class CreditLogCreate(CreditLogBase):
 
 
 class CreditLogInDBBase(CreditLogBase):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     user_id: int
     timestamp: datetime
-
-    class Config:
-        orm_mode = True
 
 
 class CreditLog(CreditLogInDBBase):

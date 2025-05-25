@@ -79,6 +79,21 @@ def root():
     )
 
 
+# Add root-level health endpoint to handle requests without API prefix
+@app.get("/health")
+def health_check():
+    """
+    Root-level health check endpoint
+    """
+    return JSONResponse(
+        content={
+            "status": "ok", 
+            "service": "PDF-Docat API",
+            "message": "Service is running"
+        }
+    )
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

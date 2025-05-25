@@ -153,3 +153,73 @@ def read_user_processing_logs(
     ).offset(offset).limit(limit).all()
     
     return logs
+
+
+@router.post("/translate")
+async def translate_pdf(
+    *,
+    db: Session = Depends(deps.get_db),
+    file: UploadFile = File(...),
+    source_lang: str = Form("en"),
+    target_lang: str = Form("zh"),
+    dual: bool = Form(False),
+    current_user: User = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Direct PDF translation endpoint.
+    """
+    # Validate source and target languages
+    from app.core.config import settings
+    
+    # Map common language codes to our system
+    lang_mapping = {
+        "en": "english",
+        "zh": "simplified-chinese",
+        "zh-cn": "simplified-chinese", 
+        "zh-tw": "traditional-chinese",
+        "de": "german",
+        "ja": "japanese",
+        "es": "spanish",
+        "fr": "french"
+    }
+    
+    # Convert to our internal language codes
+    mapped_target = lang_mapping.get(target_lang, target_lang)
+    if mapped_target not in settings.TARGET_LANGUAGES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid target language. Must be one of: {', '.join(settings.TARGET_LANGUAGES)}",
+        )
+    
+    # Create translation options with translate enabled
+    translation_options = TranslationOptions(
+        translate_enabled=True,
+        target_language=mapped_target,
+        dual_language=dual
+    )
+    
+    # Use auto engine for translation
+    result = await pdf_service.process_pdf(
+        db,
+        current_user,
+        file,
+        "auto",  # Use auto engine
+        translation_options,
+        None  # No file annotations
+    )
+    
+    # Log translation action
+    log_user_action(
+        db, 
+        current_user.id, 
+        "Translated PDF", 
+        {
+            "filename": file.filename,
+            "source_lang": source_lang,
+            "target_lang": target_lang,
+            "dual": dual,
+            "logId": result.get("logId")
+        }
+    )
+    
+    return JSONResponse(content=result)

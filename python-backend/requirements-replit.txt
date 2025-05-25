@@ -1,0 +1,45 @@
+# Core FastAPI dependencies
+fastapi==0.115.6
+pydantic==2.11.5
+uvicorn==0.15.0
+python-multipart==0.0.5
+email-validator==2.2.0
+python-dotenv==0.21.1
+
+# Database dependencies
+sqlalchemy==1.4.46
+alembic==1.7.7
+# PostgreSQL adapter for Replit deployment with Neon DB
+psycopg2-binary==2.9.6
+
+# Authentication dependencies
+passlib==1.7.4
+bcrypt==3.2.2
+python-jose==3.3.0
+
+# File handling and processing
+aiofiles==23.2.1
+requests==2.31.0
+httpx==0.25.2
+
+# PDF processing dependencies
+pymupdf==1.22.5
+tqdm==4.66.1
+tenacity==8.2.3
+numpy==1.26.0
+
+# Additional dependencies for PDFMathTranslate v2-rc compatibility
+beautifulsoup4==4.12.2
+lxml==4.9.3
+
+# Image processing (optional)
+Pillow==10.1.0
+
+# For production deployment
+gunicorn==20.1.0
+
+# NOTE: Redis and Celery are NOT included for Replit deployment
+# These are replaced by:
+# - FastAPI BackgroundTasks (instead of Celery)
+# - Replit Database + in-memory caching (instead of Redis)
+# - In-memory rate limiting (instead of Redis rate limiting) 

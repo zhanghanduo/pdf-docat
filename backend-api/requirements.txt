@@ -10,5 +10,9 @@ Pillow==10.1.0
 numpy==1.24.3
 requests==2.31.0
 
+# Redis dependencies for caching and task queue
+redis==6.1.0
+celery[redis]==5.3.4
+
 # PDF processing dependencies (will be installed if PDFMathTranslate is available)
 # PDFMathTranslate - needs to be installed separately or added as submodule 

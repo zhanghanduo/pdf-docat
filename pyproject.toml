@@ -1,7 +1,14 @@
+# PDF-Docat: PDF Processing and Translation Application
+# Redis is used for:
+# - Celery task queue (message broker and result backend)
+# - Caching system (PDF processing results, file data)
+# - Rate limiting and session management
+# - Real-time task status updates via Pub/Sub
+
 [project]
 name = "repl-nix-workspace"
 version = "0.1.0"
-description = "Add your description here"
+description = "PDF processing and translation application with Redis caching and task queue"
 requires-python = ">=3.11"
 dependencies = [
     "alembic>=1.7.4,<1.8.0",
@@ -18,4 +25,15 @@ dependencies = [
     "requests>=2.32.3",
     "sqlalchemy>=1.4.0,<1.5.0",
     "uvicorn>=0.15.0,<0.16.0",
+    # Redis dependencies
+    "redis>=6.1.0,<7.0.0",
+    "celery[redis]>=5.3.0,<6.0.0",
+    # PDF processing dependencies
+    "pymupdf>=1.22.0,<2.0.0",
+    "beautifulsoup4>=4.12.0,<5.0.0",
+    "lxml>=4.9.0,<5.0.0",
+    "tqdm>=4.66.0,<5.0.0",
+    "tenacity>=8.2.0,<9.0.0",
+    "numpy>=1.26.0,<2.0.0",
+    "httpx>=0.25.0,<1.0.0",
 ]

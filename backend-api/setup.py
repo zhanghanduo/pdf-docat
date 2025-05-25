@@ -95,6 +95,25 @@ def install_dependencies():
     logger.info("✅ Dependencies installed successfully")
     return True
 
+def verify_redis_connection():
+    """Verify Redis connection and installation"""
+    try:
+        import redis
+        # Try to connect to Redis
+        r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+        r.ping()
+        logger.info("✅ Redis connection verified successfully")
+        return True
+    except ImportError:
+        logger.error("❌ Redis Python client not installed")
+        return False
+    except Exception as e:
+        logger.warning(f"⚠️ Redis server not accessible: {e}")
+        logger.info("💡 Note: Redis server needs to be running for full functionality")
+        logger.info("💡 Docker: docker run -d -p 6379:6379 redis:7-alpine")
+        logger.info("💡 Or install Redis locally: https://redis.io/download")
+        return True  # Don't fail setup if Redis server isn't running
+
 def create_directories():
     """Create necessary directories"""
     dirs = ["uploads", "outputs", "logs"]
@@ -110,6 +129,10 @@ def main():
     if not install_dependencies():
         sys.exit(1)
     
+    # Verify Redis installation
+    if not verify_redis_connection():
+        sys.exit(1)
+    
     # Install PDFMathTranslate
     if not install_pdftranslate():
         sys.exit(1)
@@ -119,6 +142,7 @@ def main():
     
     logger.info("🎉 Setup completed successfully!")
     logger.info("💡 You can now run: python main.py")
+    logger.info("💡 For task processing, also start Celery worker: celery -A app.tasks.celery_app worker --loglevel=info")
 
 if __name__ == "__main__":
     main() 
